@@ -2,6 +2,7 @@
 
 (declare (usual-integrations))
 
+
 ;;; Self-evaluating entities
 
 (define (self-evaluating? exp)
@@ -10,35 +11,36 @@
       (eq? exp #f)
       (string? exp)))	; Our prompt (viz., "EVAL==> ") is a string.
 
+
 ;;; Variables
 
 (define (variable? exp) (symbol? exp))
-
 (define (same-variable? var1 var2) (eq? var1 var2))  ;; Nice abstraction
+
 
 ;;; Special forms (in general)
 
-(define (tagged-list? exp tag)
+(define (special-form? exp tag)
   (and (pair? exp)
        (eq? (car exp) tag)))
 
+
 ;;; Quotations
 
-(define (quoted? exp) (tagged-list? exp 'quote))
-
+(define (quoted? exp) (special-form? exp 'quote))
 (define (text-of-quotation quot) (cadr quot))
+
 
 ;;; Assignment--- SET!
 
-(define (assignment? exp) (tagged-list? exp 'set!))
-(define (permanent-assignment? exp) (tagged-list? exp 'set!!))
+(define (assignment? exp) (special-form? exp 'set!))
+(define (assignment-variable assn) (cadr assn))
+(define (assignment-value assn) (caddr assn))
 
-(define (assignment-variable assn) (cadr  assn))
-(define (assignment-value    assn) (caddr assn))
 
 ;;; Definitions
 
-(define (definition? exp) (tagged-list? exp 'define))
+(define (definition? exp) (special-form? exp 'define))
 
 (define (definition-variable defn)
   (if (variable? (cadr defn))			;;   (DEFINE  foo      ...)
@@ -51,15 +53,16 @@
       (cons 'lambda				;;   (DEFINE (foo p...) b...)
             (cons (cdadr defn)			;; = (DEFINE  foo
                   (cddr  defn)))))		;;     (LAMBDA (p...) b...))
-
+
+
 ;;; LAMBDA expressions
 
-(define (lambda? exp) (tagged-list? exp 'lambda))
+(define (lambda? exp) (special-form? exp 'lambda))
 (define (lambda-parameters lambda-exp) (cadr lambda-exp))
+
 (define (lambda-body lambda-exp)
   (let ((full-body (cddr lambda-exp)))
     (sequence->begin full-body)))
-
 
 (define declaration? pair?)
 
@@ -85,13 +88,26 @@
 	(else (make-begin seq))))
 
 (define (make-begin exp) (cons 'begin exp))
-
+
+
+;;; Tags
+
+(define *tag-aware* '*tag-aware*)
+
+(define (make-tag-aware proc)
+  (list *tag-aware* proc))
+
+(define tag-aware-unwrap cadr)
+
+(define (tag-aware-procedure? x)
+  (and (pair? x)
+       (eq? *tag-aware* (car x))))
+
+
 ;;; If conditionals
 
-(define (if? exp) (tagged-list? exp 'if))
-
+(define (if? exp) (special-form? exp 'if))
 (define (if-predicate exp) (cadr exp))
-
 (define (if-consequent exp) (caddr exp))
 
 (define (if-alternative exp)
@@ -105,18 +121,17 @@
 
 ;;; COND Conditionals
 
-(define (cond? exp) (tagged-list? exp 'cond))
+(define (cond? exp) (special-form? exp 'cond))
 
 (define (clauses cndl) (cdr cndl))
+
 (define (no-clauses? clauses) (null? clauses))
 (define (first-clause clauses) (car clauses))
 (define (rest-clauses clauses) (cdr clauses))
+
 (define (else-clause? clause) (eq? (predicate clause) 'else))
-
 (define (predicate clause) (car clause))
-
-(define (actions clause)
-  (sequence->begin (cdr clause)))
+(define (actions clause) (sequence->begin (cdr clause)))
 
 (define (cond->if cond-exp)
   (define (expand clauses)
@@ -132,30 +147,34 @@
 		    (expand (cdr clauses))))))
   (expand (clauses cond-exp)))
 
-
+
 ;;; BEGIN expressions (a.k.a. sequences)
 
-(define (begin? exp) (tagged-list? exp 'begin))
+(define (begin? exp) (special-form? exp 'begin))
 (define (begin-actions begin-exp) (cdr begin-exp))
-
 (define (last-exp? seq) (null? (cdr seq)))
 (define (first-exp seq) (car seq))
 (define (rest-exps seq) (cdr seq))
 (define no-more-exps? null?)		; for non-tail-recursive vers.
 
+
 ;;; LET expressions
 
-(define (let? exp) (tagged-list? exp 'let))
-(define (let-bound-variables let-exp)
-  (map car (cadr let-exp)))
+(define (let? exp) (special-form? exp 'let))
+
+(define (let-bound-variables let-exp) (map car (cadr let-exp)))
+
 (define (let-values let-exp) (map cadr (cadr let-exp)))
+
 (define (let-body let-exp) (sequence->begin (cddr let-exp)))
+
 (define (let->combination let-exp)
   (let ((names (let-bound-variables let-exp))
 	(values (let-values let-exp))
 	(body (let-body let-exp)))
     (cons (list 'LAMBDA names body)
 	  values)))
+
 
 ;;; Procedure applications -- NO-ARGS? and LAST-OPERAND? added
 
@@ -169,7 +188,6 @@
 (define (args-application? exp)			;; Changed from 5.2.1
   (and (pair? exp)
        (not (null? (cdr exp)))))
-
 
 (define (operator app) (car app))
 (define (operands app) (cdr app))

@@ -2,17 +2,16 @@
 ;;;   Generic analysis, but not prepared for
 ;;;   extension to handle nonstrict operands.
 
+
 (define (eval exp env)
   ((analyze exp) env))
 
 (define analyze
-  (make-generic-operator 1 'analyze
-    (lambda (exp)
-      (cond ((application? exp)
-	     (analyze-application exp))
-	    (else
-	     (error "Unknown expression type"
-		    exp))))))
+  (make-generic-operator
+   1 'analyze
+   (lambda (exp)
+     (cond ((application? exp) (analyze-application exp))
+           (else (error "Unknown expression type" exp))))))
 
 (define (analyze-self-evaluating exp)
   (lambda (env) exp))
@@ -47,11 +46,7 @@
   (let ((vars (lambda-parameters exp))
         (bproc (analyze (lambda-body exp))))
     (lambda (env)
-      ;; Return native Scheme procedure instead of compound procedure.
-      (lambda args
-        (execute-application
-         (make-compound-procedure vars bproc env)
-         args)))))
+      (make-compound-procedure vars bproc env))))
 
 (defhandler analyze analyze-lambda lambda?)
 
@@ -61,16 +56,20 @@
         (aprocs (map analyze (operands exp))))
     (lambda (env)
       (execute-application (fproc env)
-	(map (lambda (aproc) (aproc env))
-	     aprocs)))))
+                           (map (lambda (aproc) (aproc env))
+                                aprocs)))))
 
 (define execute-application
-  (make-generic-operator 2 'execute-application
-    (lambda (proc args)
-      (error "Unknown procedure type" proc))))
+  (make-generic-operator
+   2 'execute-application
+   (lambda (proc args)
+     (error "Unknown procedure type" proc))))
 
 (defhandler execute-application
-  apply-primitive-procedure
+  (lambda (proc args)
+    ;; Underlying scheme doesn't know about tags,
+    ;; so get rid of them.
+    (apply-primitive-procedure proc (map tag-unwrap args)))
   strict-primitive-procedure?)
 
 
@@ -138,6 +137,41 @@
       'ok)))
 
 (defhandler analyze analyze-definition definition?)
+
+
+(define *tag* '*tag*)
+
+(define (tagged? x)
+  (and (pair? x) (eq? *tag* (car x))))
+
+(define (tag-unwrap x)
+  (if (tagged? x)
+      (caddr x)
+      x))
+
+(define tags
+  (make-tag-aware
+   (lambda (x)
+     (if (tagged? x)
+         (cadr x)
+         '()))))
+
+(define tag
+  (make-tag-aware
+   (lambda (x . names)
+     (list *tag* (append names ((tag-aware-unwrap tags) x)) (tag-unwrap x)))))
+
+(defhandler execute-application
+  (lambda (proc args)
+    (apply-primitive-procedure (tag-aware-unwrap proc) args))
+  tag-aware-procedure?)
+
+;; TODO: make this work: (apply f arg1 arg2 rest-of-args).
+(define apply (make-tag-aware execute-application))
+
+;; TODO: fix this.
+(define cons
+  (make-tag-aware cons))
 
 
 ;;; Macros (definitions are in syntax.scm)

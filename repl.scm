@@ -4,15 +4,15 @@
 
 (define write
   (make-generic-operator 1 'write
-    (access write user-initial-environment)))
+                         (access write user-initial-environment)))
 
 (define write-line
   (make-generic-operator 1 'write-line
-    (access write-line user-initial-environment)))
+                         (access write-line user-initial-environment)))
 
 (define pp
   (make-generic-operator 1 'pretty-print
-    (access pp user-initial-environment)))
+                         (access pp user-initial-environment)))
 
 (define (procedure-printable-representation procedure)
   `(compound-procedure
@@ -36,7 +36,8 @@
 
 (define (init)
   (set! the-global-environment
-	(extend-environment '() '() the-empty-environment))
+        (extend-environment '() '() the-empty-environment))
+  (for-each (lambda (exp) (eval exp the-global-environment)) library-exps)
   (repl))
 
 (define (repl)
