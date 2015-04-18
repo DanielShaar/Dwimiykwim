@@ -38,7 +38,7 @@
         (cproc (analyze (if-consequent exp)))
         (aproc (analyze (if-alternative exp))))
     (lambda (env)
-      (if (true? (pproc env)) (cproc env) (aproc env)))))
+      (if (pproc env) (cproc env) (aproc env)))))
 
 (defhandler analyze analyze-if if?)
 
@@ -47,7 +47,10 @@
   (let ((vars (lambda-parameters exp))
         (bproc (analyze (lambda-body exp))))
     (lambda (env)
-      (make-compound-procedure vars bproc env))))
+      (lambda args
+        (execute-application
+         (make-compound-procedure vars bproc env)
+         args)))))
 
 (defhandler analyze analyze-lambda lambda?)
 

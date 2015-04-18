@@ -4,16 +4,12 @@
 
 (define the-unspecified-value (list 'the-unspecified-value))
 
-(define (true? x)
-  (if x true false))
-
-(define (false? x)
-  (if x false true))
 
 ;;; Primitive procedures are inherited from Scheme.
 
 (define strict-primitive-procedure? procedure?)
 (define apply-primitive-procedure apply)
+
 
 ;;; Compound procedures
 
@@ -27,6 +23,7 @@
 (define (procedure-parameters p) (vector-ref p 1))
 (define (procedure-body p) (vector-ref p 2))
 (define (procedure-environment p) (vector-ref p 3))
+
 
 ;;; An ENVIRONMENT is a chain of FRAMES, made of vectors.
 
@@ -53,6 +50,7 @@
 	  (cond ((null? vars) (plp (vector-ref env 2)))
 		((eq? var (car vars)) (car vals))
 		(else (scan (cdr vars) (cdr vals))))))))
+
 
 ;;; Extension to make underlying Scheme values available to interpreter
 
