@@ -47,6 +47,7 @@
   (let ((vars (lambda-parameters exp))
         (bproc (analyze (lambda-body exp))))
     (lambda (env)
+      ;; Return native Scheme procedure instead of compound procedure.
       (lambda args
         (execute-application
          (make-compound-procedure vars bproc env)
@@ -88,20 +89,6 @@
 (define (list-of-pairs->pair-of-lists pairs)
   (cons (map car pairs) (map cdr pairs)))
 
-;; (match-arguments '(a b c) '(1 2 3))
-;; ;Value: ((a . 1) (b . 2) (c . 3))
-;; (match-arguments '(a b c) '(1 2 3 4 5 6 7))
-;; ;Too many arguments given () (4 5 6 7)
-;; (match-arguments '(a b c) '(1 2))
-;; ;Too few arguments given (c) ()
-;; (match-arguments 'z '(1 2 3 4 5 6 7))
-;; ;Value: (z 1 2 3 4 5 6 7)
-;; (match-arguments '(a b c . z) '(1 2 3 4 5 6 7))
-;; ;Value: ((a . 1) (b . 2) (c . 3) (z 4 5 6 7))
-;; (list-of-pairs->pair-of-lists
-;;  (match-arguments '(a b c . z) '(1 2 3 4 5 6 7)))
-;; ;Value: ((a b c z) 1 2 3 (4 5 6 7))
-
 (defhandler execute-application
   (lambda (proc args)
     ((procedure-body proc)
@@ -113,21 +100,6 @@
         (cdr vars-vals)
         (procedure-environment proc)))))
   compound-procedure?)
-
-;; eval> (define (sqrts . ns)
-;;         (map sqrt ns))
-;; ok
-;; eval> (sqrts 1 2 3 4)
-;; (1 1.4142135623730951 1.7320508075688772 2)
-;; eval> (sqrts)
-;; ()
-;; eval> (define (sqrts n1 n2 . ns)
-;;         (map sqrt ns))
-;; ok
-;; eval> (sqrts 1 2 3 4)
-;; (1.7320508075688772 2)
-;; eval> (sqrts 1)
-;; ;Too many arguments given (n2 . ns) ()
 
 
 (define (analyze-sequence exps)
