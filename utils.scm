@@ -6,6 +6,9 @@
 
 (define ((compose f g) . args) (f (apply g args)))
 
+(define ((partial-apply f . args) . more-args)
+  (apply f (append args more-args)))
+
 ;;; This is to keep the Scheme printer from going into an infinite
 ;;; loop if you try to print a circular data structure, such as an
 ;;; environment.  This is complicated by the fact that there was

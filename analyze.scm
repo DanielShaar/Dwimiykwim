@@ -69,7 +69,7 @@
   (lambda (proc args)
     ;; Underlying scheme doesn't know about tags,
     ;; so get rid of them.
-    (apply-primitive-procedure proc (map tag-unwrap args)))
+    (apply-primitive-procedure proc (map untag args)))
   strict-primitive-procedure?)
 
 
@@ -139,39 +139,39 @@
 (defhandler analyze analyze-definition definition?)
 
 
-(define *tag* '*tag*)
-
-(define (tagged? x)
-  (and (pair? x) (eq? *tag* (car x))))
-
-(define (tag-unwrap x)
-  (if (tagged? x)
-      (caddr x)
-      x))
-
 (define tags
-  (make-tag-aware
+  (%make-tag-aware
    (lambda (x)
      (if (tagged? x)
-         (cadr x)
+         (%tagged-tags x)
          '()))))
 
 (define tag
-  (make-tag-aware
-   (lambda (x . names)
-     (list *tag* (append names ((tag-aware-unwrap tags) x)) (tag-unwrap x)))))
+  (let ((tags (%tag-aware-proc tags)))
+    (%make-tag-aware
+     (lambda (x . names)
+       (%make-tagged (untag x)
+                     (append names (tags x)))))))
+
+(define (untag x)
+  (if (tagged? x)
+      (%tagged-data x)
+      x))
 
 (defhandler execute-application
   (lambda (proc args)
-    (apply-primitive-procedure (tag-aware-unwrap proc) args))
-  tag-aware-procedure?)
+    (apply-primitive-procedure (%tag-aware-proc proc) args))
+  tag-aware?)
 
-(define cons
-  (make-tag-aware cons))
+(define tag-aware-cons (%make-tag-aware cons))
+(define tag-aware-cons* (%make-tag-aware cons*))
+(define tag-aware-list (%make-tag-aware list))
 
-(define apply
-  ;; The cons* allows the usage (apply f arg1 arg2 ... rest-of-args).
-  (make-tag-aware (compose execute-application cons*)))
+(define tag-aware-apply
+  (%make-tag-aware
+   (lambda (f . args)
+     ;; The cons* allows the usage (apply f arg1 arg2 ... rest-of-args).
+     (execute-application f (apply cons* args)))))
 
 
 ;;; Macros (definitions are in syntax.scm)

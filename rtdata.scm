@@ -25,6 +25,20 @@
 (define (procedure-environment p) (vector-ref p 3))
 
 
+;;; Tagged data and tag-aware procedures.
+
+(define-record-type <tag-aware>
+  (%make-tag-aware proc)
+  tag-aware?
+  (proc %tag-aware-proc))
+
+(define-record-type <tagged>
+  (%make-tagged data tags)
+  tagged?
+  (data %tagged-data)
+  (tags %tagged-tags))
+
+
 ;;; An ENVIRONMENT is a chain of FRAMES, made of vectors.
 
 (define (extend-environment variables values base-environment)

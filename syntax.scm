@@ -90,20 +90,6 @@
 (define (make-begin exp) (cons 'begin exp))
 
 
-;;; Tags
-
-(define *tag-aware* '*tag-aware*)
-
-(define (make-tag-aware proc)
-  (list *tag-aware* proc))
-
-(define tag-aware-unwrap cadr)
-
-(define (tag-aware-procedure? x)
-  (and (pair? x)
-       (eq? *tag-aware* (car x))))
-
-
 ;;; If conditionals
 
 (define (if? exp) (special-form? exp 'if))
