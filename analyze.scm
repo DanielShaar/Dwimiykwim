@@ -166,12 +166,12 @@
     (apply-primitive-procedure (tag-aware-unwrap proc) args))
   tag-aware-procedure?)
 
-;; TODO: make this work: (apply f arg1 arg2 rest-of-args).
-(define apply (make-tag-aware execute-application))
-
-;; TODO: fix this.
 (define cons
   (make-tag-aware cons))
+
+(define apply
+  ;; The cons* allows the usage (apply f arg1 arg2 ... rest-of-args).
+  (make-tag-aware (compose execute-application cons*)))
 
 
 ;;; Macros (definitions are in syntax.scm)
