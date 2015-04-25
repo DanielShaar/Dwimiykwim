@@ -2,35 +2,40 @@
 
 (declare (usual-integrations write write-line pp eval))
 
+(define printable-representation
+  (make-generic-operator 1 'printable-representation identity))
+
 (define write
-  (make-generic-operator 1 'write
-                         (access write user-initial-environment)))
+  (compose (access write user-initial-environment)
+           printable-representation))
 
 (define write-line
-  (make-generic-operator 1 'write-line
-                         (access write-line user-initial-environment)))
+  (compose (access write-line user-initial-environment)
+           printable-representation))
 
 (define pp
-  (make-generic-operator 1 'pretty-print
-                         (access pp user-initial-environment)))
+  (compose (access pp user-initial-environment)
+           printable-representation))
 
-(define (procedure-printable-representation procedure)
-  `(compound-procedure
-    ,(procedure-parameters procedure)
-    ,(procedure-body procedure)
-    <procedure-environment>))
-
-(defhandler write
-  (compose write procedure-printable-representation)
+(defhandler printable-representation
+  (lambda (procedure)
+    (vector '<compound-procedure>
+            (procedure-parameters procedure)
+            (procedure-body procedure)))
   compound-procedure?)
 
-(defhandler write-line
-  (compose write-line procedure-printable-representation)
-  compound-procedure?)
+(defhandler printable-representation
+  (lambda (x)
+    (vector '<tagged>
+            (%tagged-data x)
+            (%tagged-tags x)))
+  tagged?)
 
-(defhandler pp
-  (compose pp procedure-printable-representation)
-  compound-procedure?)
+(defhandler printable-representation
+  (lambda (x)
+    (cons (printable-representation (car x))
+          (printable-representation (cdr x))))
+  pair?)
 
 (define the-global-environment 'not-initialized)
 
