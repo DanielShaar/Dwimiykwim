@@ -1,3 +1,22 @@
+(define (unique-perfect-matching xs ys xs-to-ys)
+  ;; The entry point for this file. Takes two lists of vertices, xs and ys, and
+  ;; an alist of pairs (x . neighbors-of-x). Returns a list of two-element
+  ;; lists (y x) representing the unique perfect matching, if it exists, where
+  ;; y is from ys and x is from xs.
+  (let ((matching (perfect-matching xs-to-ys '() xs ys)))
+    (and matching
+         (every (lambda (edges)
+                  (not (perfect-matching edges '() xs ys)))
+                (edge-removals xs-to-ys matching))
+         matching)))
+
+(define (edge-removals xs-to-ys matching)
+  (map (lambda (y-to-x)
+         (let ((x (cadr y-to-x))
+               (y (car y-to-x)))
+           (remove-edge xs-to-ys x y)))
+       matching))
+
 (define (perfect-matching xs-to-ys ys-to-xs xs-exposed ys-exposed)
   (if (or (null? xs-exposed) (null? ys-exposed))
       ;; There is exactly one edge from each y to each x when we have no
@@ -7,15 +26,13 @@
              (new-xs (cdr xs-exposed))
              ;; Augmenting path from y to x for some exposed y.
              (path (augmenting-path xs-to-ys ys-to-xs x ys-exposed)))
-        (if path
-            ;; TODO: return matching so far?
-            #f
-            (let* ((new-edges (flip xs-to-ys ys-to-xs path))
-                   (new-xs-to-ys (car new-edges))
-                   (new-ys-to-xs (cadr new-edges))
-                   (y (car path))
-                   (new-ys (remove (partial-apply eq? y) ys-exposed)))
-              (perfect-matching new-xs-to-ys new-ys-to-xs new-xs new-ys))))))
+        (and path
+             (let* ((new-edges (flip xs-to-ys ys-to-xs path))
+                    (new-xs-to-ys (car new-edges))
+                    (new-ys-to-xs (cadr new-edges))
+                    (y (car path))
+                    (new-ys (remove (partial-apply eq? y) ys-exposed)))
+               (perfect-matching new-xs-to-ys new-ys-to-xs new-xs new-ys))))))
 
 (define (augmenting-path xs-to-ys ys-to-xs x ys-exposed)
   (define (search-x old-path x)
