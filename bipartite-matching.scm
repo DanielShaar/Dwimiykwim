@@ -1,12 +1,13 @@
 (define (perfect-matching xs-to-ys ys-to-xs xs-exposed ys-exposed)
   (if (or (null? xs-exposed) (null? ys-exposed))
-      ;; TODO: extract matching from this.
+      ;; There is exactly one edge from each y to each x when we have no
+      ;; remaining exposed vertices.
       ys-to-xs
       (let* ((x (car xs-exposed))
              (new-xs (cdr xs-exposed))
              ;; Augmenting path from y to x for some exposed y.
              (path (augmenting-path xs-to-ys ys-to-xs x ys-exposed)))
-        (if (null? path)
+        (if path
             ;; TODO: return matching so far?
             #f
             (let* ((new-edges (flip xs-to-ys ys-to-xs path))
