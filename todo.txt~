@@ -1,4 +1,0 @@
-Things to worry about later:
-
-If a function uses the same predicate for argument matching on
-two of its arguments, throw an ambiguity error.

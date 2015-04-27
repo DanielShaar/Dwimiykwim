@@ -8,6 +8,7 @@
   (access generic-evaluation-environment user-initial-environment))
 
 (load "utils" user-initial-environment)
+(load "argument-matching" user-initial-environment)
 (load "bipartite-matching" user-initial-environment)
 (load "ghelper" user-initial-environment)
 (load "syntax" user-initial-environment)

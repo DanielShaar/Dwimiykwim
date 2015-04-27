@@ -10,7 +10,18 @@
                  (cons arg
                        (map car
                             (filter (lambda (var-to-predicate)
-                                      ((cdr var-to-predicate) arg))
-                                    vars-to-predicates)
-                            args))))))
+                                      ((cadr var-to-predicate) arg))
+                                    vars-to-predicates))))
+               args)))
     (unique-perfect-matching args vars args-to-vars)))
+
+;; eval> (define args '(1 "hi" foo))
+;; ok
+
+;; eval> (define vars-to-predicates (list (list 'a symbol?)
+;;                                        (list 'b number?)
+;;                                        (list 'c string?)))
+;; ok
+
+;; eval> (match args vars-to-predicates)
+;; ((a foo) (c "hi") (b 1))
