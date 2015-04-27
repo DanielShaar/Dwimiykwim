@@ -9,7 +9,8 @@
   (or (number? exp)
       (eq? exp #t)
       (eq? exp #f)
-      (string? exp)))	; Our prompt (viz., "EVAL==> ") is a string.
+      ;; Our prompt (viz., "EVAL==> ") is a string.
+      (string? exp)))
 
 
 ;;; Variables
@@ -20,44 +21,48 @@
 
 ;;; Special forms (in general)
 
-(define (special-form? exp tag)
+(define ((special-form? tag) exp)
   (and (pair? exp)
        (eq? (car exp) tag)))
 
 
 ;;; Quotations
 
-(define (quoted? exp) (special-form? exp 'quote))
+(define quoted? (special-form? 'quote))
 (define (text-of-quotation quot) (cadr quot))
 
 
-;;; Assignment--- SET!
+;;; Assignment---SET!
 
-(define (assignment? exp) (special-form? exp 'set!))
+(define assignment? (special-form? 'set!))
 (define (assignment-variable assn) (cadr assn))
 (define (assignment-value assn) (caddr assn))
 
 
 ;;; Definitions
 
-(define (definition? exp) (special-form? exp 'define))
+(define definition? (special-form? 'define))
 
 (define (definition-variable defn)
-  (if (variable? (cadr defn))			;;   (DEFINE  foo      ...)
+  (if (variable? (cadr defn))
+      ;; (define foo ...)
       (cadr  defn)
-      (caadr defn)))				;;   (DEFINE (foo ...) ...)
+      ;; (define (foo args...) body)
+      (caadr defn)))
 
 (define (definition-value defn)
-  (if (variable? (cadr defn))			;;   (DEFINE  foo        ...)
+  (if (variable? (cadr defn))
+      ;; (define foo ...)
       (caddr defn)
-      (cons 'lambda				;;   (DEFINE (foo p...) b...)
-            (cons (cdadr defn)			;; = (DEFINE  foo
-                  (cddr  defn)))))		;;     (LAMBDA (p...) b...))
+      ;; (define (foo args...) body) => (define foo (lambda (args...) body))
+      (cons 'lambda
+            (cons (cdadr defn)
+                  (cddr  defn)))))
 
 
 ;;; LAMBDA expressions
 
-(define (lambda? exp) (special-form? exp 'lambda))
+(define lambda? (special-form? 'lambda))
 (define (lambda-parameters lambda-exp) (cadr lambda-exp))
 
 (define (lambda-body lambda-exp)
@@ -71,28 +76,18 @@
       (car var-decl)
       var-decl))
 
-(define (lazy? var-decl)
-  (and (pair? var-decl)
-       (memq 'lazy (cdr var-decl))
-       (not (memq 'memo (cdr var-decl)))))
-
-(define (lazy-memo? var-decl)
-  (and (pair? var-decl)
-       (memq 'lazy (cdr var-decl))
-       (memq 'memo (cdr var-decl))))
-
 (define (sequence->begin seq)
   (cond ((null? seq) seq)
-	((null? (cdr seq)) (car seq))
-	((begin? (car seq)) seq)
-	(else (make-begin seq))))
+        ((null? (cdr seq)) (car seq))
+        ((begin? (car seq)) seq)
+        (else (make-begin seq))))
 
 (define (make-begin exp) (cons 'begin exp))
 
 
 ;;; If conditionals
 
-(define (if? exp) (special-form? exp 'if))
+(define if? (special-form? 'if))
 (define (if-predicate exp) (cadr exp))
 (define (if-consequent exp) (caddr exp))
 
@@ -107,7 +102,7 @@
 
 ;;; COND Conditionals
 
-(define (cond? exp) (special-form? exp 'cond))
+(define cond? (special-form? 'cond))
 
 (define (clauses cndl) (cdr cndl))
 
@@ -122,31 +117,32 @@
 (define (cond->if cond-exp)
   (define (expand clauses)
     (cond ((no-clauses? clauses)
-	   (list 'error "COND: no values matched"))
-	  ((else-clause? (car clauses))
-	   (if (no-clauses? (cdr clauses))
-	       (actions (car clauses))
-	       (error "else clause isn't last -- INTERP" exp)))
-	  (else
-	   (make-if (predicate (car clauses))
-		    (actions (car clauses))
-		    (expand (cdr clauses))))))
+           (list 'error "COND: no values matched"))
+          ((else-clause? (car clauses))
+           (if (no-clauses? (cdr clauses))
+               (actions (car clauses))
+               (error "else clause isn't last -- INTERP" exp)))
+          (else
+           (make-if (predicate (car clauses))
+                    (actions (car clauses))
+                    (expand (cdr clauses))))))
   (expand (clauses cond-exp)))
 
 
 ;;; BEGIN expressions (a.k.a. sequences)
 
-(define (begin? exp) (special-form? exp 'begin))
+(define begin? (special-form? 'begin))
 (define (begin-actions begin-exp) (cdr begin-exp))
 (define (last-exp? seq) (null? (cdr seq)))
 (define (first-exp seq) (car seq))
 (define (rest-exps seq) (cdr seq))
-(define no-more-exps? null?)		; for non-tail-recursive vers.
+;; Non-tail-recursive vers.
+(define no-more-exps? null?)
 
 
 ;;; LET expressions
 
-(define (let? exp) (special-form? exp 'let))
+(define let? (special-form? 'let))
 
 (define (let-bound-variables let-exp) (map car (cadr let-exp)))
 
@@ -156,10 +152,9 @@
 
 (define (let->combination let-exp)
   (let ((names (let-bound-variables let-exp))
-	(values (let-values let-exp))
-	(body (let-body let-exp)))
-    (cons (list 'LAMBDA names body)
-	  values)))
+        (values (let-values let-exp))
+        (body (let-body let-exp)))
+    (cons (list 'lambda names body) values)))
 
 
 ;;; Procedure applications -- NO-ARGS? and LAST-OPERAND? added
@@ -167,18 +162,21 @@
 (define (application? exp)
   (pair? exp))
 
-(define (no-args? exp)				;; Added for tail recursion
+;; Added for tail recursion
+(define (no-args? exp)
   (and (pair? exp)
        (null? (cdr exp))))
 
-(define (args-application? exp)			;; Changed from 5.2.1
+;; Changed from 5.2.1
+(define (args-application? exp)
   (and (pair? exp)
        (not (null? (cdr exp)))))
 
 (define (operator app) (car app))
 (define (operands app) (cdr app))
 
-(define (last-operand? args)			;; Added for tail recursion
+;; Added for tail recursion
+(define (last-operand? args)
   (null? (cdr args)))
 
 (define (no-operands? args) (null? args))
