@@ -81,5 +81,8 @@
 (define tags lib:tags)
 (define untag lib:untag)
 
+(define (has-tag? name)
+  (lambda (x)
+    (member name (tags x))))
 
 ))

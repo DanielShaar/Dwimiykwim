@@ -53,7 +53,7 @@
 (define (definition-variable defn)
   (if (variable? (cadr defn))
       ;; (define foo ...)
-      (cadr  defn)
+      (cadr defn)
       ;; (define (foo args...) body)
       (caadr defn)))
 
@@ -64,7 +64,7 @@
       ;; (define (foo args...) body) => (define foo (lambda (args...) body))
       (cons 'lambda
             (cons (cdadr defn)
-                  (cddr  defn)))))
+                  (cddr defn)))))
 
 
 ;;; Lambda
@@ -84,7 +84,12 @@
 
 ;;; Madlab (order-agnostic lambda :D)
 
-(define madlab? (special-form? 'madlab))
+(define (madlab? exp)
+  (or ((special-form? 'madlab) exp)
+      (and (lambda? exp)
+           (list? (lambda-parameters exp))
+           (every pair? (lambda-parameters exp)))))
+;; (define madlab? (special-form? 'madlab))
 ;; This is the same as lambda for now.
 (define madlab-parameters lambda-parameters)
 (define madlab-body lambda-body)

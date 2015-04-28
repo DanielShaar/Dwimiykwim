@@ -70,3 +70,12 @@ greeting
 ;dwimiykwim>
 (mad-map (list (tag 4 'four) (tag 6 'six) (tag 7 'eight 'gotcha)) tags)
 ;=> ((four) (six) (eight gotcha))
+
+;dwimiykwim>
+(define (x-then-y (x (has-tag? 'x)) (y (has-tag? 'y)))
+  (list x y))
+;=> ok
+
+;dwimiykwim>
+(x-then-y (tag 4 'y) (tag 3 'x))
+;=> (#(<tagged> 3 (x)) #(<tagged> 4 (y)))

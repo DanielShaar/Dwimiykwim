@@ -1,6 +1,9 @@
 Things to worry about later:
 
-If a function uses the same predicate for argument matching on
-two of its arguments, throw an ambiguity error.
+If a function uses the same predicate for argument matching on two of its
+arguments, throw an ambiguity error.
 
-
+Do more checks on lambda expressions to determine for sure whether they are
+madlabs or lambdas with a typo. Right now we assume madlab if all of the
+arguments are pairs, which should maybe be stronger (e.g. all of the cars are
+variables).
