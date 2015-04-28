@@ -120,22 +120,57 @@
 
 (defhandler execute-application
   (lambda (proc args)
-    ((procedure-body proc)
+    ((compound-procedure-bproc proc)
      (extend-environment-twos
-      (match-argument-trees (procedure-parameters proc) args)
-      (procedure-environment proc))))
+      (match-argument-trees (compound-procedure-vars proc) args)
+      (compound-procedure-env proc))))
   compound-procedure?)
 
 
 ;;; Madlab (order-agnostic lambda :D)
 
+(define (match-predicates-with-arguments varpreds args)
+  ;; Takes in an alist mapping argument variable names to predicates that they
+  ;; must satisfy and a list of argument values. Returns a unique perfect
+  ;; matching of the arugment variables to their matched values if such a
+  ;; matching exists and #f otherwise.
+  (let* ((vars
+          (map car varpreds))
+         (args-to-vars
+          (map (lambda (arg)
+                 (cons arg
+                       (map car
+                            (filter (lambda (varpred)
+                                      ;; Uses execute-application to support
+                                      ;; predicates defined in the interpreted
+                                      ;; language.
+                                      (execute-application (cadr varpred)
+                                                           (list arg)))
+                                    varpreds))))
+               args)))
+    (unique-perfect-matching args vars args-to-vars)))
+
 (define (analyze-madlab exp)
-  (let ((vars (lambda-parameters exp))
-        (body (analyze (madlab-body exp))))
+  ;; A varpred is a two-element list (v p?).
+  (let* ((params (madlab-parameters exp))
+         (bproc (analyze (madlab-body exp)))
+         (varpreds (lambda (env)
+                     (map (lambda (varpred)
+                            (list (car varpred)
+                                  ((analyze (cadr varpred)) env)))
+                          params))))
     (lambda (env)
-      (make-madlab-procedure vars body env))))
+      (make-madlab-procedure (varpreds env) bproc env))))
 
 (defhandler analyze analyze-madlab madlab?)
+
+(defhandler execute-application
+  (lambda (proc args)
+    ((madlab-procedure-bproc proc)
+     (extend-environment-twos
+      (match-predicates-with-arguments (madlab-procedure-varpreds proc) args)
+      (madlab-procedure-env proc))))
+  madlab-procedure?)
 
 
 ;;; Begin (a.k.a. sequences)
@@ -183,16 +218,6 @@
   (lambda (proc args)
     (apply-primitive-procedure (%tag-aware-proc proc) args))
   tag-aware?)
-
-(define tag-aware-cons (%make-tag-aware cons))
-(define tag-aware-cons* (%make-tag-aware cons*))
-(define tag-aware-list (%make-tag-aware list))
-
-(define tag-aware-apply
-  (%make-tag-aware
-   (lambda (f . args)
-     ;; The cons* allows the usage (apply f arg1 arg2 ... rest-of-args).
-     (execute-application f (apply cons* args)))))
 
 
 ;;; Macros (definitions are in syntax.scm)

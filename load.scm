@@ -13,9 +13,9 @@
 (load "ghelper" user-initial-environment)
 (load "syntax" user-initial-environment)
 (load "rtdata" user-initial-environment)
-(load "library" user-initial-environment)
 
 (load "analyze" generic-evaluation-environment)
+(load "library" generic-evaluation-environment)
 (load "repl" generic-evaluation-environment)
 
 (ge generic-evaluation-environment)

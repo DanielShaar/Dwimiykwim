@@ -13,16 +13,22 @@
 
 ;;; Compound procedures
 
-(define (make-compound-procedure vars bproc env)
-  (vector 'compound-procedure vars bproc env))
+(define-record-type <compound-procedure>
+  (make-compound-procedure vars bproc env)
+  compound-procedure?
+  (vars compound-procedure-vars)
+  (bproc compound-procedure-bproc)
+  (env compound-procedure-env))
 
-(define (compound-procedure? obj)
-  (and (vector? obj)
-       (eq? (vector-ref obj 0) 'compound-procedure)))
 
-(define (procedure-parameters p) (vector-ref p 1))
-(define (procedure-body p) (vector-ref p 2))
-(define (procedure-environment p) (vector-ref p 3))
+;;; Madlab procedures
+
+(define-record-type <madlab-procedure>
+  (make-madlab-procedure preds bproc env)
+  madlab-procedure?
+  (preds madlab-procedure-varpreds)
+  (bproc madlab-procedure-bproc)
+  (env madlab-procedure-env))
 
 
 ;;; Tagged data and tag-aware procedures.

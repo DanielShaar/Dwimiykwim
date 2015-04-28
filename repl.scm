@@ -20,9 +20,16 @@
 (defhandler printable-representation
   (lambda (procedure)
     (vector '<compound-procedure>
-            (procedure-parameters procedure)
-            (procedure-body procedure)))
+            (compound-procedure-vars procedure)
+            (compound-procedure-bproc procedure)))
   compound-procedure?)
+
+(defhandler printable-representation
+  (lambda (procedure)
+    (vector '<madlab-procedure>
+            (madlab-procedure-varpreds procedure)
+            (madlab-procedure-bproc procedure)))
+  madlab-procedure?)
 
 (defhandler printable-representation
   (lambda (x)
@@ -48,7 +55,8 @@
 (define (repl)
   (if (eq? the-global-environment 'not-initialized)
 	  (error "Interpreter not initialized. Run (init) first."))
-  (let ((input (prompt-for-command-expression "eval> ")))
+  (let ((input (prompt-for-command-expression "; dwimiykwim>\n")))
+    (write-string "; => ")
     (write-line (eval input the-global-environment))
     (repl)))
 
