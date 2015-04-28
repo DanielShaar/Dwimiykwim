@@ -69,22 +69,22 @@
 
 ;;; Lambda
 
-(define lambda? (special-form? 'lambda))
-(define lambda-parameters cadr)
-(define lambda-body (compose sequence-begin cddr))
-
 (define (sequence->begin seq)
   (cond ((null? seq) seq)
         ((null? (cdr seq)) (car seq))
         ((begin? (car seq)) seq)
         (else (make-begin seq))))
 
+(define lambda? (special-form? 'lambda))
+(define lambda-parameters cadr)
+(define lambda-body (compose sequence->begin cddr))
+
 (define (make-begin exp) (cons 'begin exp))
 
 
 ;;; Madlab (order-agnostic lambda :D)
 
-(define madlab? (special-form 'madlab))
+(define madlab? (special-form? 'madlab))
 ;; This is the same as lambda for now.
 (define madlab-parameters lambda-parameters)
 (define madlab-body lambda-body)

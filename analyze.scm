@@ -106,35 +106,36 @@
 
 (defhandler analyze analyze-lambda lambda?)
 
-(define (list-of-pairs->pair-of-lists pairs)
-  (cons (map car pairs) (map cdr pairs)))
-
-(defhandler execute-application
-  (lambda (proc args)
-    ((procedure-body proc)
-     (let ((vars-vals
-            (list-of-pairs->pair-of-lists
-             (match-arguments (procedure-parameters proc) args))))
-       (extend-environment
-        (car vars-vals)
-        (cdr vars-vals)
-        (procedure-environment proc)))))
-  compound-procedure?)
-
-
-;;; Madlab (order-agnostic lambda :D)
-
-(define (match-arguments vars vals)
+(define (match-argument-trees vars vals)
   (cond
    ((null? vars) (if (null? vals)
                      '()
                      (error "Too many arguments given" vars vals)))
    ((pair? vars) (if (pair? vals)
-                     (cons (cons (car vars) (car vals))
-                           (match-arguments (cdr vars) (cdr vals)))
+                     (cons (list (car vars) (car vals))
+                           (match-argument-trees (cdr vars) (cdr vals)))
                      (error "Too few arguments given" vars vals)))
-   ((symbol? vars) (list (cons vars vals)))
+   ((symbol? vars) (list (list vars vals)))
    (else (error "Bad argument variable specification"))))
+
+(defhandler execute-application
+  (lambda (proc args)
+    ((procedure-body proc)
+     (extend-environment-twos
+      (match-argument-trees (procedure-parameters proc) args)
+      (procedure-environment proc))))
+  compound-procedure?)
+
+
+;;; Madlab (order-agnostic lambda :D)
+
+(define (analyze-madlab exp)
+  (let ((vars (lambda-parameters exp))
+        (body (analyze (madlab-body exp))))
+    (lambda (env)
+      (make-madlab-procedure vars body env))))
+
+(defhandler analyze analyze-madlab madlab?)
 
 
 ;;; Begin (a.k.a. sequences)

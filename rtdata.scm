@@ -41,6 +41,12 @@
 
 ;;; An ENVIRONMENT is a chain of FRAMES, made of vectors.
 
+(define (extend-environment-twos var-val-twos base-environment)
+  (let ((vars-vals (list-of-twos->two-lists var-val-twos)))
+    (extend-environment (car vars-vals)
+                        (cadr vars-vals)
+                        base-environment)))
+
 (define (extend-environment variables values base-environment)
   (if (fix:= (length variables) (length values))
       (vector variables values base-environment)
