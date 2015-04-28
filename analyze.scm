@@ -195,24 +195,19 @@
 
 ;;; Tags
 
-(define tags
-  (%make-tag-aware
-   (lambda (x)
-     (if (tagged? x)
-         (%tagged-tags x)
-         '()))))
-
-(define tag
-  (let ((tags (%tag-aware-proc tags)))
-    (%make-tag-aware
-     (lambda (x . names)
-       (%make-tagged (untag x)
-                     (append names (tags x)))))))
+(define (tags x)
+  (if (tagged? x)
+      (%tagged-tags x)
+      '()))
 
 (define (untag x)
   (if (tagged? x)
       (%tagged-data x)
       x))
+
+(define (tag x . names)
+  (%make-tagged (untag x)
+                (append names (tags x))))
 
 (defhandler execute-application
   (lambda (proc args)

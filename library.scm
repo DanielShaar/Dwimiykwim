@@ -1,4 +1,7 @@
-;;; Definitions
+;;;; Definitions
+
+
+;;; MIT Scheme
 
 (define lib:cons (%make-tag-aware cons))
 (define lib:cons* (%make-tag-aware cons*))
@@ -19,9 +22,22 @@
          (madlab-procedure? f)))))
 
 
-;;; Bindings
+;;; Dwimiykwim
+
+(define lib:tag (%make-tag-aware tag))
+(define lib:tags (%make-tag-aware tags))
+;; It's not tag-aware, so it strips tags.
+(define lib:untag identity)
+
+
+
+;;;; Bindings
+
 
 (define library-exps '(
+
+
+;;; MIT Scheme
 
 (define cons lib:cons)
 (define cons* lib:cons*)
@@ -43,6 +59,9 @@
             (cons x rest)
             rest))))
 
+
+;;; Utils
+
 (define (identity x) x)
 
 (define (any? x) #t)
@@ -54,5 +73,13 @@
 (define (partial-apply f . args)
   (lambda more-args
      (apply f (append args more-args))))
+
+
+;;; Dwimiykwim
+
+(define tag lib:tag)
+(define tags lib:tags)
+(define untag lib:untag)
+
 
 ))
