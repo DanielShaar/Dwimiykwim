@@ -26,13 +26,13 @@
        (eq? (car exp) tag)))
 
 
-;;; Quotations
+;;; Quote
 
 (define quoted? (special-form? 'quote))
 (define (text-of-quotation quot) (cadr quot))
 
 
-;;; Assignment---SET!
+;;; Set!
 
 (define assignment? (special-form? 'set!))
 (define (assignment-variable assn) (cadr assn))
@@ -60,21 +60,11 @@
                   (cddr  defn)))))
 
 
-;;; LAMBDA expressions
+;;; Lambda
 
 (define lambda? (special-form? 'lambda))
-(define (lambda-parameters lambda-exp) (cadr lambda-exp))
-
-(define (lambda-body lambda-exp)
-  (let ((full-body (cddr lambda-exp)))
-    (sequence->begin full-body)))
-
-(define declaration? pair?)
-
-(define (parameter-name var-decl)
-  (if (pair? var-decl)
-      (car var-decl)
-      var-decl))
+(define lambda-parameters cadr)
+(define lambda-body (compose sequence-begin cddr))
 
 (define (sequence->begin seq)
   (cond ((null? seq) seq)
@@ -85,7 +75,15 @@
 (define (make-begin exp) (cons 'begin exp))
 
 
-;;; If conditionals
+;;; Madlab (order-agnostic lambda :D)
+
+(define madlab? (special-form 'madlab))
+;; This is the same as lambda for now.
+(define madlab-parameters lambda-parameters)
+(define madlab-body lambda-body)
+
+
+;;; If
 
 (define if? (special-form? 'if))
 (define (if-predicate exp) (cadr exp))
@@ -100,7 +98,7 @@
   (list 'IF pred conseq alternative))
 
 
-;;; COND Conditionals
+;;; Cond
 
 (define cond? (special-form? 'cond))
 
@@ -129,7 +127,7 @@
   (expand (clauses cond-exp)))
 
 
-;;; BEGIN expressions (a.k.a. sequences)
+;;; Begin (a.k.a. sequences)
 
 (define begin? (special-form? 'begin))
 (define (begin-actions begin-exp) (cdr begin-exp))
@@ -140,7 +138,7 @@
 (define no-more-exps? null?)
 
 
-;;; LET expressions
+;;; Let
 
 (define let? (special-form? 'let))
 
@@ -157,28 +155,8 @@
     (cons (list 'lambda names body) values)))
 
 
-;;; Procedure applications -- NO-ARGS? and LAST-OPERAND? added
+;;; Procedure applications
 
-(define (application? exp)
-  (pair? exp))
-
-;; Added for tail recursion
-(define (no-args? exp)
-  (and (pair? exp)
-       (null? (cdr exp))))
-
-;; Changed from 5.2.1
-(define (args-application? exp)
-  (and (pair? exp)
-       (not (null? (cdr exp)))))
-
+(define (application? exp) (pair? exp))
 (define (operator app) (car app))
 (define (operands app) (cdr app))
-
-;; Added for tail recursion
-(define (last-operand? args)
-  (null? (cdr args)))
-
-(define (no-operands? args) (null? args))
-(define (first-operand args) (car args))
-(define (rest-operands args) (cdr args))
