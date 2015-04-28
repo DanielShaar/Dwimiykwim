@@ -29,10 +29,6 @@
 (define apply lib:apply)
 (define procedure? lib:procedure?)
 
-(define (partial-apply f . args)
-  (lambda more-args
-    (apply f (append args more-args))))
-
 (define (map f xs)
   (if (null? xs)
       '()
@@ -46,5 +42,17 @@
         (if (keep? x)
             (cons x rest)
             rest))))
+
+(define (identity x) x)
+
+(define (any? x) #t)
+
+(define (compose f g)
+  (lambda args
+    (f (apply g args))))
+
+(define (partial-apply f . args)
+  (lambda more-args
+     (apply f (append args more-args))))
 
 ))

@@ -4,10 +4,13 @@
 
 (define (any? x) #t)
 
-(define ((compose f g) . args) (f (apply g args)))
+(define (compose f g)
+  (lambda args
+    (f (apply g args))))
 
-(define ((partial-apply f . args) . more-args)
-  (apply f (append args more-args)))
+(define (partial-apply f . args)
+  (lambda more-args
+     (apply f (append args more-args))))
 
 (define (list-of-twos->two-lists pairs)
   (list (map car pairs) (map cadr pairs)))
