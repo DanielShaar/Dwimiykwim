@@ -3,6 +3,13 @@
 (declare (usual-integrations))
 
 
+;;; Applications
+
+(define (application? exp) (pair? exp))
+(define (operator app) (car app))
+(define (operands app) (cdr app))
+
+
 ;;; Self-evaluating entities
 
 (define (self-evaluating? exp)
@@ -153,10 +160,3 @@
         (values (let-values let-exp))
         (body (let-body let-exp)))
     (cons (list 'lambda names body) values)))
-
-
-;;; Procedure applications
-
-(define (application? exp) (pair? exp))
-(define (operator app) (car app))
-(define (operands app) (cdr app))

@@ -1,7 +1,4 @@
-;;;; Separating analysis from execution.
-;;;   Generic analysis, but not prepared for
-;;;   extension to handle nonstrict operands.
-
+;;; Generic operations.
 
 (define (eval exp env)
   ((analyze exp) env))
@@ -13,11 +10,48 @@
      (cond ((application? exp) (analyze-application exp))
            (else (error "Unknown expression type" exp))))))
 
+(define execute-application
+  (make-generic-operator
+   2 'execute-application
+   (lambda (proc args)
+     (error "Unknown procedure type" proc))))
+
+
+;;; Applications
+
+(define (analyze-application exp)
+  (let ((fproc (analyze (operator exp)))
+        (aprocs (map analyze (operands exp))))
+    (lambda (env)
+      (execute-application (fproc env)
+                           (map (lambda (aproc) (aproc env))
+                                aprocs)))))
+
+(defhandler execute-application
+  (lambda (proc args)
+    ;; Underlying scheme doesn't know about tags,
+    ;; so get rid of them.
+    (apply-primitive-procedure proc (map untag args)))
+  strict-primitive-procedure?)
+
+
+;;; Self-evaluating entities
+
 (define (analyze-self-evaluating exp)
   (lambda (env) exp))
 
 (defhandler analyze analyze-self-evaluating self-evaluating?)
 
+
+;;; Variables
+
+(define (analyze-variable exp)
+  (lambda (env) (lookup-variable-value exp env)))
+
+(defhandler analyze analyze-variable variable?)
+
+
+;;; Quote
 
 (define (analyze-quoted exp)
   (let ((qval (text-of-quotation exp)))
@@ -26,11 +60,7 @@
 (defhandler analyze analyze-quoted quoted?)
 
 
-(define (analyze-variable exp)
-  (lambda (env) (lookup-variable-value exp env)))
-
-(defhandler analyze analyze-variable variable?)
-
+;;; If
 
 (define (analyze-if exp)
   (let ((pproc (analyze (if-predicate exp)))
@@ -42,6 +72,32 @@
 (defhandler analyze analyze-if if?)
 
 
+;;; Set!
+
+(define (analyze-assignment exp)
+  (let ((var (assignment-variable exp))
+        (vproc (analyze (assignment-value exp))))
+    (lambda (env)
+      (set-variable-value! var (vproc env) env)
+      'ok)))
+
+(defhandler analyze analyze-assignment assignment?)
+
+
+;;; Definitions
+
+(define (analyze-definition exp)
+  (let ((var (definition-variable exp))
+        (vproc (analyze (definition-value exp))))
+    (lambda (env)
+      (define-variable! var (vproc env) env)
+      'ok)))
+
+(defhandler analyze analyze-definition definition?)
+
+
+;;; Lambda
+
 (define (analyze-lambda exp)
   (let ((vars (lambda-parameters exp))
         (bproc (analyze (lambda-body exp))))
@@ -49,41 +105,6 @@
       (make-compound-procedure vars bproc env))))
 
 (defhandler analyze analyze-lambda lambda?)
-
-
-(define (analyze-application exp)
-  (let ((fproc (analyze (operator exp)))
-        (aprocs (map analyze (operands exp))))
-    (lambda (env)
-      (execute-application (fproc env)
-                           (map (lambda (aproc) (aproc env))
-                                aprocs)))))
-
-(define execute-application
-  (make-generic-operator
-   2 'execute-application
-   (lambda (proc args)
-     (error "Unknown procedure type" proc))))
-
-(defhandler execute-application
-  (lambda (proc args)
-    ;; Underlying scheme doesn't know about tags,
-    ;; so get rid of them.
-    (apply-primitive-procedure proc (map untag args)))
-  strict-primitive-procedure?)
-
-
-(define (match-arguments vars vals)
-  (cond
-   ((null? vars) (if (null? vals)
-                     '()
-                     (error "Too many arguments given" vars vals)))
-   ((pair? vars) (if (pair? vals)
-                     (cons (cons (car vars) (car vals))
-                           (match-arguments (cdr vars) (cdr vals)))
-                     (error "Too few arguments given" vars vals)))
-   ((symbol? vars) (list (cons vars vals)))
-   (else (error "Bad argument variable specification"))))
 
 (define (list-of-pairs->pair-of-lists pairs)
   (cons (map car pairs) (map cdr pairs)))
@@ -100,6 +121,23 @@
         (procedure-environment proc)))))
   compound-procedure?)
 
+
+;;; Madlab (order-agnostic lambda :D)
+
+(define (match-arguments vars vals)
+  (cond
+   ((null? vars) (if (null? vals)
+                     '()
+                     (error "Too many arguments given" vars vals)))
+   ((pair? vars) (if (pair? vals)
+                     (cons (cons (car vars) (car vals))
+                           (match-arguments (cdr vars) (cdr vals)))
+                     (error "Too few arguments given" vars vals)))
+   ((symbol? vars) (list (cons vars vals)))
+   (else (error "Bad argument variable specification"))))
+
+
+;;; Begin (a.k.a. sequences)
 
 (define (analyze-sequence exps)
   (define (sequentially proc1 proc2)
@@ -119,25 +157,7 @@
   begin?)
 
 
-(define (analyze-assignment exp)
-  (let ((var (assignment-variable exp))
-        (vproc (analyze (assignment-value exp))))
-    (lambda (env)
-      (set-variable-value! var (vproc env) env)
-      'ok)))
-
-(defhandler analyze analyze-assignment assignment?)
-
-
-(define (analyze-definition exp)
-  (let ((var (definition-variable exp))
-        (vproc (analyze (definition-value exp))))
-    (lambda (env)
-      (define-variable! var (vproc env) env)
-      'ok)))
-
-(defhandler analyze analyze-definition definition?)
-
+;;; Tags
 
 (define tags
   (%make-tag-aware
