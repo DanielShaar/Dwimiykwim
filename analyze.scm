@@ -134,21 +134,18 @@
   ;; must satisfy and a list of argument values. Returns a unique perfect
   ;; matching of the arugment variables to their matched values if such a
   ;; matching exists and #f otherwise.
-  (let* ((vars
-          (map car varpreds))
-         (args-to-vars
-          (map (lambda (arg)
-                 (cons arg
-                       (map car
-                            (filter (lambda (varpred)
-                                      ;; Uses execute-application to support
-                                      ;; predicates defined in the interpreted
-                                      ;; language.
-                                      (execute-application (cadr varpred)
-                                                           (list arg)))
-                                    varpreds))))
-               args)))
-    (unique-perfect-matching args vars args-to-vars)))
+  (let* ((vars-to-args
+          (map (lambda (varpred)
+                 (cons (car varpred)
+                       (filter (lambda (arg)
+                                 ;; Uses execute-application to support
+                                 ;; predicates defined in the interpreted
+                                 ;; language.
+                                 (execute-application (cadr varpred)
+                                                      (list arg)))
+                               args)))
+               varpreds)))
+    (unique-perfect-matching (map car varpreds) args vars-to-args)))
 
 (define (analyze-madlab exp)
   ;; A varpred is a two-element list (v p?).

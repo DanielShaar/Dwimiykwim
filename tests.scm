@@ -20,7 +20,7 @@
  '(x1 x2 x3)
  '(y1 y2 y3)
  '((x1 y1 y2) (x2 y1 y2 y3) (x3 y1)))
-;Value: ((y1 x3) (y3 x2) (y2 x1))
+;Value: ((x3 y1) (x2 y3) (x1 y2))
 
 (unique-perfect-matching
  '(x1 x2 x3)
@@ -32,7 +32,7 @@
 ;Value: varpreds
 
 (match-predicates-with-arguments varpreds '(1 "hi" foo))
-;Value: ((a foo) (c "hi") (b 1))
+;Value: ((c "hi") (b 1) (a foo))
 
 (match-predicates-with-arguments varpreds '(1 foo bar))
 ;Value: #f

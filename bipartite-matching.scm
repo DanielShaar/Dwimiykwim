@@ -1,8 +1,8 @@
 (define (unique-perfect-matching xs ys xs-to-ys)
   ;; The entry point for this file. Takes two lists of vertices, xs and ys, and
   ;; an alist of pairs (x . neighbors-of-x). Returns a list of two-element
-  ;; lists (y x) representing the unique perfect matching, if it exists, where
-  ;; y is from ys and x is from xs.
+  ;; lists (x y) representing the unique perfect matching, if it exists, where
+  ;; x is from xs and y is from ys.
   (let ((matching (perfect-matching xs-to-ys '() xs ys)))
     (and matching
          (let ((xs-to-ys (car matching)))
@@ -22,7 +22,7 @@
                                                ;; Only consider matched ys.
                                                (= (length y-to-xs) 2))
                                              (cadr matching))))))
-         (cadr matching))))
+         (map reverse (cadr matching)))))
 
 (define (elem-rest-twos xs)
   ;; Sends '(a b c d) to '((a (b c d)) (b (a c d)) (c (a b d)) (d (a b c))).
