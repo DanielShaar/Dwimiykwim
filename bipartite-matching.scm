@@ -5,23 +5,44 @@
   ;; y is from ys and x is from xs.
   (let ((matching (perfect-matching xs-to-ys '() xs ys)))
     (and matching
-         (every (lambda (edges)
-                  (not (perfect-matching edges '() xs ys)))
-                (edge-removals xs-to-ys matching))
-         matching)))
+         (let ((xs-to-ys (car matching)))
+           (not (any (lambda (edge-rest)
+                       (let ((ys-to-xs (cadr edge-rest))
+                             (xs (cdar edge-rest))
+                             (ys (list (caar edge-rest))))
+                         ;; Start where we left off (same xs-to-ys) but with a
+                         ;; single edge from the matching removed (modified
+                         ;; ys-to-xs) and the vertices that were touching that
+                         ;; edge now exposed (both xs and ys are singletons).
+                         (perfect-matching xs-to-ys ys-to-xs xs ys)))
+                     ;; Iterate through the ys-to-xs from the matching. Each
+                     ;; y-to-xs is a (y), meaning y is unmatched, or a (y x),
+                     ;; meaning y is matched to x.
+                     (elem-rest-twos (filter (lambda (y-to-xs)
+                                               ;; Only consider matched ys.
+                                               (= (length y-to-xs) 2))
+                                             (cadr matching))))))
+         (cadr matching))))
 
-(define (edge-removals xs-to-ys matching)
-  (map (lambda (y-to-x)
-         (let ((x (cadr y-to-x))
-               (y (car y-to-x)))
-           (remove-edge xs-to-ys x y)))
-       matching))
+(define (elem-rest-twos xs)
+  ;; Sends '(a b c d) to '((a (b c d)) (b (a c d)) (c (a b d)) (d (a b c))).
+  (let loop ((xs-head-rev '())
+             (xs-tail xs))
+    (if (null? xs-tail)
+        '()
+        (let ((x (car xs-tail))
+              (xs-tail-new (cdr xs-tail)))
+          (cons (list x (append (reverse xs-head-rev) xs-tail-new))
+                (loop (cons x xs-head-rev) xs-tail-new))))))
 
 (define (perfect-matching xs-to-ys ys-to-xs xs-exposed ys-exposed)
+  ;; Returns a matching in the form of new xs-to-ys and ys-to-xs in which every
+  ;; x is matched or #f if no such matching exists. In particular, ys-to-xs has
+  ;; an edge from each matched y to its matched x.
   (if (or (null? xs-exposed) (null? ys-exposed))
       ;; There is exactly one edge from each y to each x when we have no
-      ;; remaining exposed vertices.
-      ys-to-xs
+      ;; remaining exposed vertices, so ys-to-xs gives the matching.
+      (list xs-to-ys ys-to-xs)
       (let* ((x (car xs-exposed))
              (new-xs (cdr xs-exposed))
              ;; Augmenting path from y to x for some exposed y.
@@ -76,7 +97,3 @@
         (cons (cons x (delq y (cdr x-neighbors)))
               (del-assq x xs-to-ys))
         xs-to-ys)))
-
-;; Victory!
-;; (perfect-matching '((x1 y1 y2) (x2 y1 y2 y3) (x3 y1)) '() '(x1 x2 x3) '(y1 y2 y3))
-;; ;Value 32: ((y1 x3) (y3 x2) (y2 x1))

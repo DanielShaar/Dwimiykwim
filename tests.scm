@@ -9,14 +9,33 @@
 
 ;;; MIT Scheme
 
-(define args '(1 "hi" foo))
-;Value: args
+(perfect-matching
+ '((x1 y1 y2) (x2 y1 y2 y3) (x3 y1))
+ '()
+ '(x1 x2 x3)
+ '(y1 y2 y3))
+;Value: (((x3) (x2 y1 y2) (x1 y1)) ((y1 x3) (y3 x2) (y2 x1)))
+
+(unique-perfect-matching
+ '(x1 x2 x3)
+ '(y1 y2 y3)
+ '((x1 y1 y2) (x2 y1 y2 y3) (x3 y1)))
+;Value: ((y1 x3) (y3 x2) (y2 x1))
+
+(unique-perfect-matching
+ '(x1 x2 x3)
+ '(y1 y2 y3)
+ '((x1 y1 y2) (x2 y1 y2 y3) (x3 y1 y3)))
+;Value: #f
 
 (define varpreds (list (list 'a symbol?) (list 'b number?) (list 'c string?)))
 ;Value: varpreds
 
-(match-predicates-with-arguments varpreds args)
+(match-predicates-with-arguments varpreds '(1 "hi" foo))
 ;Value: ((a foo) (c "hi") (b 1))
+
+(match-predicates-with-arguments varpreds '(1 foo bar))
+;Value: #f
 
 
 ;;; Dwimiykwim
