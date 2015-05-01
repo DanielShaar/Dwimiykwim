@@ -31,7 +31,7 @@
                     (new-xs-to-ys (car new-edges))
                     (new-ys-to-xs (cadr new-edges))
                     (y (car path))
-                    (new-ys (remove (partial-apply eq? y) ys-exposed)))
+                    (new-ys (delq y ys-exposed)))
                (perfect-matching new-xs-to-ys new-ys-to-xs new-xs new-ys))))))
 
 (define (augmenting-path xs-to-ys ys-to-xs x ys-exposed)
@@ -73,7 +73,7 @@
 (define (remove-edge xs-to-ys x y)
   (let* ((x-neighbors (assq x xs-to-ys)))
     (if x-neighbors
-        (cons (cons x (remove (partial-apply eq? y) (cdr x-neighbors)))
+        (cons (cons x (delq y (cdr x-neighbors)))
               (del-assq x xs-to-ys))
         xs-to-ys)))
 
