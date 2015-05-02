@@ -33,8 +33,8 @@
 ;;; to be in the matching). That is,
 ;;;     (unique-perfect-matching-with-required '() xs ys xs-to-ys)
 ;;; returns the same result as
-;;;     (unique-perfect-matching xs ys xs-to-ys),
-;; though likely more slowly.
+;;;     (unique-perfect-matching xs ys xs-to-ys)
+;;; if xs and ys are equal length, though it's likely slower.
 (define (unique-perfect-matching-with-required ys-required xs ys xs-to-ys)
   ;; Start by flipping the edges because we're matching ys (specifically, the
   ;; required ones) to xs.
