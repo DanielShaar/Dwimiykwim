@@ -3,7 +3,11 @@
 ;;; two-element lists (x y) representing the unique perfect matching, if it
 ;;; exists, where x is from xs and y is from ys, and returns #f otherwise.
 (define (unique-perfect-matching xs ys xs-to-ys)
-  (let ((matching (perfect-matching xs-to-ys '() xs ys)))
+  ;; We restrict ourselves to having exactly as many xs as ys. The algorithm
+  ;; can miss additional matchings if there are more ys than xs, so this
+  ;; restriction is important.
+  (let ((matching (and (= (length xs) (length ys))
+                       (semiperfect-matching xs-to-ys '() xs ys))))
     (and
      matching
      ;; Don't accpet if there's another perfect matching.
@@ -31,26 +35,26 @@
 ;;; Like unique-perfect-matching except there can be more ys than xs and we can
 ;;; require some of those ys to be in the matching (all xs are already required
 ;;; to be in the matching). That is,
-;;;     (unique-perfect-matching-with-required '() xs ys xs-to-ys)
+;;;     (unique-max-matching-with-required '() xs ys xs-to-ys)
 ;;; returns the same result as
-;;;     (unique-perfect-matching xs ys xs-to-ys)
+;;;     (unique-max-matching xs ys xs-to-ys)
 ;;; if xs and ys are equal length, though it's likely slower.
-(define (unique-perfect-matching-with-required ys-required xs ys xs-to-ys)
+(define (unique-semiperfect-matching-with-required ys-required xs ys xs-to-ys)
   ;; Start by flipping the edges because we're matching ys (specifically, the
   ;; required ones) to xs.
   (let* ((ys-to-xs (flip-all xs-to-ys))
-         (required-matching (perfect-matching ys-to-xs '() ys-required xs)))
+         (required-matching (semiperfect-matching ys-to-xs '() ys-required xs)))
     (and
      required-matching
      ;; Flip the edges back for matching xs to ys.
      (let* ((xs-to-ys (flip-all (car required-matching)))
             (ys-to-xs (flip-all (cadr required-matching)))
             (xs-exposed (exposed-xs ys-to-xs xs))
-            (matching (perfect-matching xs-to-ys ys-to-xs xs-exposed ys)))
+            (matching (semiperfect-matching xs-to-ys ys-to-xs xs-exposed ys)))
        (and
         matching
-        ;; Don't accpet if there's another perfect matching of xs that matches
-        ;; all of ys-required.
+        ;; Don't accpet if there's another semiperfect matching of xs that
+        ;; matches all of ys-required.
         (let ((xs-to-ys (car matching)))
           (not (any (lambda (edge-rest)
                       (let ((ys-to-xs (cadr edge-rest))
@@ -92,25 +96,29 @@
 (define (exposed-ys ys-to-xs ys)
   (remove (lambda (y) (assq y ys-to-xs)) ys))
 
-(define (perfect-matching xs-to-ys ys-to-xs xs-exposed ys-exposed)
+(define (semiperfect-matching xs-to-ys ys-to-xs xs-exposed ys-exposed)
   ;; Returns a matching in the form of new xs-to-ys and ys-to-xs in which every
   ;; x is matched or #f if no such matching exists. In particular, ys-to-xs has
   ;; an edge from each matched y to its matched x.
-  (if (or (null? xs-exposed) (null? ys-exposed))
-      ;; There is exactly one edge from each y to each x when we have no
-      ;; remaining exposed vertices, so ys-to-xs gives the matching.
-      (list xs-to-ys ys-to-xs)
-      (let* ((x (car xs-exposed))
-             (new-xs (cdr xs-exposed))
-             ;; Augmenting path from y to x for some exposed y.
-             (path (augmenting-path xs-to-ys ys-to-xs x ys-exposed)))
-        (and path
-             (let* ((new-edges (flip-path xs-to-ys ys-to-xs path))
-                    (new-xs-to-ys (car new-edges))
-                    (new-ys-to-xs (cadr new-edges))
-                    (y (car path))
-                    (new-ys (delq y ys-exposed)))
-               (perfect-matching new-xs-to-ys new-ys-to-xs new-xs new-ys))))))
+  (cond
+   ;; We've matched all the xs. There's exactly one edge from each matched y to
+   ;; the x its matched with, so the matching can be extracted from ys-to-xs,
+   ;; but we need xs-to-ys for unique-semiperfect-matching-with-required.
+   ((null? xs-exposed) (list xs-to-ys ys-to-xs))
+   ;; We ran out of ys before running out of xs.
+   ((null? ys-exposed) #f)
+   (else
+    (let* ((x (car xs-exposed))
+           (new-xs (cdr xs-exposed))
+           ;; Augmenting path from y to x for some exposed y.
+           (path (augmenting-path xs-to-ys ys-to-xs x ys-exposed)))
+      (and path
+           (let* ((new-edges (flip-path xs-to-ys ys-to-xs path))
+                  (new-xs-to-ys (car new-edges))
+                  (new-ys-to-xs (cadr new-edges))
+                  (y (car path))
+                  (new-ys (delq y ys-exposed)))
+             (semiperfect-matching new-xs-to-ys new-ys-to-xs new-xs new-ys)))))))
 
 (define (augmenting-path xs-to-ys ys-to-xs x ys-exposed)
   (define (search-x old-path x)
