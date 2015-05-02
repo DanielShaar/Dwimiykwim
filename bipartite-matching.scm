@@ -96,10 +96,10 @@
 (define (exposed-ys ys-to-xs ys)
   (remove (lambda (y) (assq y ys-to-xs)) ys))
 
+;;; Returns a matching in the form of new xs-to-ys and ys-to-xs in which every
+;;; x is matched or #f if no such matching exists. In particular, ys-to-xs has
+;;; an edge from each matched y to its matched x.
 (define (semiperfect-matching xs-to-ys ys-to-xs xs-exposed ys-exposed)
-  ;; Returns a matching in the form of new xs-to-ys and ys-to-xs in which every
-  ;; x is matched or #f if no such matching exists. In particular, ys-to-xs has
-  ;; an edge from each matched y to its matched x.
   (cond
    ;; We've matched all the xs. There's exactly one edge from each matched y to
    ;; the x its matched with, so the matching can be extracted from ys-to-xs,
