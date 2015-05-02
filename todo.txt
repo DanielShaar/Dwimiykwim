@@ -7,3 +7,32 @@ Do more checks on lambda expressions to determine for sure whether they are
 madlabs or lambdas with a typo. Right now we assume madlab if all of the
 arguments are pairs, which should maybe be stronger (e.g. all of the cars are
 variables).
+
+Ideas about contexts:
+
+        (define (make-context name tagged-vars-alist)
+            (list name bindings-alist))
+
+    Each function has a default context consisting of its arguments:
+    
+        (make-context 'default-context '((var1 tag-list1)
+                                         (var2 tag-list2)
+                                         ...))
+
+    Each function will also store an alist of contexts (this will require
+    changing the environment a bit). To add to this alist, one calls:
+    
+        (madblock name base-context new-tagged-vars)
+
+    Madblock will go through new-tagged-vars alist and make new context named
+    name. It will also add base-context bindings.
+
+    We can then perform inference by the following syntax:
+
+        (infer context-name function required-args)
+
+    We have the required args to prevent ambiguity and to make the debugging
+    simpler, since we can just add to this list when ambiguity occurs.
+    Infer will search to find the context, and then perform matching on
+    function. It will add the required-args list to the matching.
+    

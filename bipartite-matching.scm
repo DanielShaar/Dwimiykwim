@@ -10,7 +10,7 @@
                        (semiperfect-matching xs-to-ys '() xs ys))))
     (and
      matching
-     ;; Don't accpet if there's another perfect matching.
+     ;; Don't accept if there's another perfect matching.
      (let ((xs-to-ys (car matching)))
        (not (any (lambda (edge-rest)
                    (let ((ys-to-xs (cadr edge-rest))
@@ -35,9 +35,9 @@
 ;;; Like unique-perfect-matching except there can be more ys than xs and we can
 ;;; require some of those ys to be in the matching (all xs are already required
 ;;; to be in the matching). That is,
-;;;     (unique-max-matching-with-required '() xs ys xs-to-ys)
+;;;     (unique-semiperfect-matching-with-required '() xs ys xs-to-ys)
 ;;; returns the same result as
-;;;     (unique-max-matching xs ys xs-to-ys)
+;;;     (unique-perfect-matching xs ys xs-to-ys)
 ;;; if xs and ys are equal length, though it's likely slower.
 (define (unique-semiperfect-matching-with-required ys-required xs ys xs-to-ys)
   ;; Start by flipping the edges because we're matching ys (specifically, the
