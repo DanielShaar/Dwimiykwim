@@ -129,16 +129,16 @@
 
 ;;; Madlab (order-agnostic lambda :D)
 
+;;; Takes in an alist mapping argument variable names to predicates that they
+;;; must satisfy and a list of argument values. Returns a unique perfect
+;;; matching of the arugment variables to their matched values if such a
+;;; matching exists and #f otherwise.
 (define (match-predicates-with-arguments varpreds args)
-  ;; Takes in an alist mapping argument variable names to predicates that they
-  ;; must satisfy and a list of argument values. Returns a unique perfect
-  ;; matching of the arugment variables to their matched values if such a
-  ;; matching exists and #f otherwise.
   (let* ((vars-to-args
           (map (lambda (varpred)
                  (cons (car varpred)
                        (filter (lambda (arg)
-                                 ;; Uses execute-application to support
+                                 ;; Use execute-application to support
                                  ;; predicates defined in the interpreted
                                  ;; language.
                                  (execute-application (cadr varpred)

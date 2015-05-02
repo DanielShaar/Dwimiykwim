@@ -3,11 +3,13 @@
 ;;; correct manually for now. (This is mainly to catch whether things start
 ;;; throwing errors.)
 
-
 (load "load")
 
 
 ;;; MIT Scheme
+
+(flip-all '((x1 y1 y2) (x2 y1 y2 y3) (x3 y1)))
+;Value: ((y1 x3 x2 x1) (y3 x2) (y2 x2 x1))
 
 (perfect-matching
  '((x1 y1 y2) (x2 y1 y2 y3) (x3 y1))
@@ -27,6 +29,20 @@
  '(y1 y2 y3)
  '((x1 y1 y2) (x2 y1 y2 y3) (x3 y1 y3)))
 ;Value: #f
+
+(unique-perfect-matching-with-required
+ '(y1 y3)
+ '(x1 x2 x3)
+ '(y2 y4)
+ '((x1 y1 y2) (x2 y1 y2 y3) (x3 y1 y4)))
+;Value: #f
+
+(unique-perfect-matching-with-required
+ '(y1 y3)
+ '(x1 x2 x3)
+ '(y2 y4)
+ '((x1 y1 y2) (x2 y1 y2 y3 y4) (x3 y1)))
+;Value: ((x1 y2) (x3 y1) (x2 y3))
 
 (define varpreds (list (list 'a symbol?) (list 'b number?) (list 'c string?)))
 ;Value: varpreds
