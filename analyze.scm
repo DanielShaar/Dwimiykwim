@@ -220,7 +220,6 @@
 
 (define (analyze-infer exp)
   (lambda (env)
-    (pp (list exp *inference-ctx*))
     (let ((proc ((analyze (infer-madlab exp)) env)))
       ((madlab-procedure-bproc proc)
        (extend-environment-twos
