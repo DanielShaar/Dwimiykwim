@@ -129,23 +129,24 @@
 
 ;;; Madlab (order-agnostic lambda :D)
 
+(define (vars-to-args varpreds args)
+  (map (lambda (varpred)
+         (cons (car varpred)
+               (filter (lambda (arg)
+                         ;; Use execute-application to support predicates
+                         ;; defined in the interpreted language.
+                         (execute-application (cadr varpred) (list arg)))
+                       args)))
+       varpreds))
+
 ;;; Takes in an alist mapping argument variable names to predicates that they
 ;;; must satisfy and a list of argument values. Returns a unique perfect
 ;;; matching of the arugment variables to their matched values if such a
 ;;; matching exists and #f otherwise.
 (define (match-predicates-with-arguments varpreds args)
-  (let* ((vars-to-args
-          (map (lambda (varpred)
-                 (cons (car varpred)
-                       (filter (lambda (arg)
-                                 ;; Use execute-application to support
-                                 ;; predicates defined in the interpreted
-                                 ;; language.
-                                 (execute-application (cadr varpred)
-                                                      (list arg)))
-                               args)))
-               varpreds)))
-    (unique-perfect-matching (map car varpreds) args vars-to-args)))
+  (unique-perfect-matching (map car varpreds)
+                           args
+                           (vars-to-args varpreds args)))
 
 (define (analyze-madlab exp)
   ;; A varpred is a two-element list (v p?).
@@ -172,22 +173,67 @@
 
 ;;; Begin (a.k.a. sequences)
 
-(define (analyze-sequence exps)
-  (define (sequentially proc1 proc2)
-    (lambda (env) (proc1 env) (proc2 env)))
-  (define (loop first-proc rest-procs)
-    (if (null? rest-procs)
-        first-proc
-        (loop (sequentially first-proc (car rest-procs))
-              (cdr rest-procs))))
-  (if (null? exps) (error "Empty sequence"))
-  (let ((procs (map analyze exps)))
-    (loop (car procs) (cdr procs))))
+(define (sequentially proc1 proc2)
+  (lambda (env) (proc1 env) (proc2 env)))
 
-(defhandler analyze
-  (lambda (exp)
-    (analyze-sequence (begin-actions exp)))
-  begin?)
+(define (sequential-loop first-proc rest-procs)
+  (if (null? rest-procs)
+      first-proc
+      (sequential-loop (sequentially first-proc (car rest-procs))
+                       (cdr rest-procs))))
+
+(define (analyze-sequence exps)
+  (if (null? exps)
+      (error "Empty sequence")
+      (let ((procs (map analyze exps)))
+        (sequential-loop (car procs) (cdr procs)))))
+
+(defhandler analyze (compose analyze-sequence begin-actions) begin?)
+
+
+;;; Madblock and infer
+
+(define *inference-ctx* '())
+
+(define (analyze-madsequence exps)
+  (define (add-result-to-ctx proc)
+    (lambda (env)
+      (let ((result (proc env)))
+        (set! *inference-ctx* (cons result *inference-ctx*))
+        result)))
+  (if (null? exps)
+      (error "Empty sequence")
+      (let ((procs (map (compose add-result-to-ctx analyze) exps)))
+        ;; Need to fluid
+        (lambda (env)
+          ;; Start with a fresh inference context.
+          (fluid-let ((*inference-ctx* '()))
+            ((sequential-loop (car procs) (cdr procs)) env))))))
+
+(defhandler analyze (compose analyze-madsequence madblock-actions) madblock?)
+
+(define (infer-arguments varpreds args-required ctx)
+  (let* ((args (remove (lambda (arg) (memq arg args-required)) ctx))
+         (edges (vars-to-args varpreds (append args-required args)))
+         (vars (map car varpreds)))
+    (unique-semiperfect-matching-with-required vars args-required args edges)))
+
+(define (analyze-infer exp)
+  (lambda (env)
+    (pp (list exp *inference-ctx*))
+    (let ((proc ((analyze (infer-madlab exp)) env)))
+      ((madlab-procedure-bproc proc)
+       (extend-environment-twos
+        (let* ((args-required (map (lambda (arg)
+                                     ((analyze arg) env))
+                                   (infer-required-args exp)))
+               (matching (infer-arguments (madlab-procedure-varpreds proc)
+                                          args-required
+                                          *inference-ctx*)))
+          matching)
+        (madlab-procedure-env proc))))))
+
+(defhandler analyze analyze-infer infer?)
 
 
 ;;; Tags

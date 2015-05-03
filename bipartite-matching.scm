@@ -37,7 +37,7 @@
 ;;; returns the same result as
 ;;;     (unique-perfect-matching xs ys xs-to-ys)
 ;;; if xs and ys are equal length, though it's likely slower.
-(define (unique-semiperfect-matching-with-required ys-required xs ys xs-to-ys)
+(define (unique-semiperfect-matching-with-required xs ys-required ys xs-to-ys)
   ;; Start by flipping the edges because we're matching ys (specifically, the
   ;; required ones) to xs.
   (and-let*
@@ -114,9 +114,16 @@
                   (new-ys (delq y ys-exposed)))
              (semiperfect-matching new-xs-to-ys new-ys-to-xs new-xs new-ys)))))))
 
+(define (odds xs)
+  ;; We 0-index lists, obviously.
+  (cond
+   ((null? xs) '())
+   ((null? (cdr xs)) '())
+   (else (cons (cadr xs) (odds (cddr xs))))))
+
 (define (augmenting-path xs-to-ys ys-to-xs x ys-exposed)
   (define (search-x old-path x)
-    (if (memq x old-path)
+    (if (memq x (odds old-path))
         #f
         (let ((new-path (cons x old-path))
               (x-to-ys (assq x xs-to-ys)))
@@ -124,7 +131,7 @@
                (any (partial-apply search-y new-path)
                     (cdr x-to-ys))))))
   (define (search-y old-path y)
-    (if (memq y old-path)
+    (if (memq y (odds old-path))
         #f
         (let ((new-path (cons y old-path)))
           (if (memq y ys-exposed)

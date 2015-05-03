@@ -18,6 +18,11 @@
  '(y1 y2 y3))
 ;Value: (((x3) (x2 y1 y2) (x1 y1)) ((y1 x3) (y3 x2) (y2 x1)))
 
+(unique-perfect-matching '(foo bar)
+                         '(foo bar)
+                         '((foo foo) (bar bar)))
+;Value: ((bar bar) (foo foo))
+
 (unique-perfect-matching
  '(x1 x2 x3)
  '(y1 y2 y3)
@@ -31,15 +36,15 @@
 ;Value: #f
 
 (unique-semiperfect-matching-with-required
- '(y4)
  '(x1 x2 x3)
+ '(y4)
  '(y1 y2 y3)
  '((x1 y1 y2) (x2 y1 y2 y3) (x3 y1 y4)))
 ;Value: #f
 
 (unique-semiperfect-matching-with-required
- '(y4)
  '(x1 x2 x3)
+ '(y4)
  '(y1 y2 y3)
  '((x1 y1 y2) (x2 y1 y2 y3 y4) (x3 y1)))
 ;Value: ((x3 y1) (x1 y2) (x2 y4))

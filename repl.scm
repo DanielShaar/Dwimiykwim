@@ -55,9 +55,10 @@
 (define (repl)
   (if (eq? the-global-environment 'not-initialized)
 	  (error "Interpreter not initialized. Run (init) first."))
-  (let ((input (prompt-for-command-expression ";dwimiykwim>\n")))
+  (let* ((input (prompt-for-command-expression ";dwimiykwim>\n"))
+         (output (eval input the-global-environment)))
     (write-string ";=> ")
-    (write-line (eval input the-global-environment))
+    (write-line output)
     (repl)))
 
 (define go repl)

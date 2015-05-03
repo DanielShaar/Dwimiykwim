@@ -28,9 +28,10 @@
 
 ;;; Special forms (in general)
 
-(define ((special-form? tag) exp)
-  (and (pair? exp)
-       (eq? (car exp) tag)))
+(define (special-form? tag)
+  (lambda (exp)
+    (and (pair? exp)
+         (eq? (car exp) tag))))
 
 
 ;;; Quote
@@ -148,6 +149,16 @@
 (define (rest-exps seq) (cdr seq))
 ;; Non-tail-recursive vers.
 (define no-more-exps? null?)
+
+
+;;; Madblock and infer
+
+(define madblock? (special-form? 'madblock))
+(define madblock-actions cdr)
+
+(define infer? (special-form? 'infer))
+(define infer-madlab cadr)
+(define infer-required-args cddr)
 
 
 ;;; Let
