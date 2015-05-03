@@ -127,6 +127,49 @@
   compound-procedure?)
 
 
+;;; Madblock and infer
+
+(define *inference-ctx* '())
+
+(define (analyze-madsequence exps)
+  (define (add-result-to-ctx proc)
+    (lambda (env)
+      (let ((result (proc env)))
+        (set! *inference-ctx* (cons result *inference-ctx*))
+        result)))
+  (if (null? exps)
+      (error "Empty sequence")
+      (let ((procs (map (compose add-result-to-ctx analyze) exps)))
+        (lambda (env)
+          ;; Start with a fresh inference context.
+          (fluid-let ((*inference-ctx* '()))
+            ((sequential-loop (car procs) (cdr procs)) env))))))
+
+(defhandler analyze (compose analyze-madsequence madblock-actions) madblock?)
+
+(define (infer-arguments varpreds args-required ctx)
+  (let* ((args (remove (lambda (arg) (memq arg args-required)) ctx))
+         (edges (vars-to-args varpreds (append args-required args)))
+         (vars (map car varpreds)))
+    (unique-semiperfect-matching-with-required vars args-required args edges)))
+
+(define (analyze-infer exp)
+  (lambda (env)
+    (let ((proc ((analyze (infer-madlab exp)) env)))
+      ((madlab-procedure-bproc proc)
+       (extend-environment-twos
+        (let* ((args-required (map (lambda (arg)
+                                     ((analyze arg) env))
+                                   (infer-required-args exp)))
+               (matching (infer-arguments (madlab-procedure-varpreds proc)
+                                          args-required
+                                          *inference-ctx*)))
+          matching)
+        (madlab-procedure-env proc))))))
+
+(defhandler analyze analyze-infer infer?)
+
+
 ;;; Madlab (order-agnostic lambda :D)
 
 (define (vars-to-args varpreds args)
@@ -189,50 +232,6 @@
         (sequential-loop (car procs) (cdr procs)))))
 
 (defhandler analyze (compose analyze-sequence begin-actions) begin?)
-
-
-;;; Madblock and infer
-
-(define *inference-ctx* '())
-
-(define (analyze-madsequence exps)
-  (define (add-result-to-ctx proc)
-    (lambda (env)
-      (let ((result (proc env)))
-        (set! *inference-ctx* (cons result *inference-ctx*))
-        result)))
-  (if (null? exps)
-      (error "Empty sequence")
-      (let ((procs (map (compose add-result-to-ctx analyze) exps)))
-        ;; Need to fluid
-        (lambda (env)
-          ;; Start with a fresh inference context.
-          (fluid-let ((*inference-ctx* '()))
-            ((sequential-loop (car procs) (cdr procs)) env))))))
-
-(defhandler analyze (compose analyze-madsequence madblock-actions) madblock?)
-
-(define (infer-arguments varpreds args-required ctx)
-  (let* ((args (remove (lambda (arg) (memq arg args-required)) ctx))
-         (edges (vars-to-args varpreds (append args-required args)))
-         (vars (map car varpreds)))
-    (unique-semiperfect-matching-with-required vars args-required args edges)))
-
-(define (analyze-infer exp)
-  (lambda (env)
-    (let ((proc ((analyze (infer-madlab exp)) env)))
-      ((madlab-procedure-bproc proc)
-       (extend-environment-twos
-        (let* ((args-required (map (lambda (arg)
-                                     ((analyze arg) env))
-                                   (infer-required-args exp)))
-               (matching (infer-arguments (madlab-procedure-varpreds proc)
-                                          args-required
-                                          *inference-ctx*)))
-          matching)
-        (madlab-procedure-env proc))))))
-
-(defhandler analyze analyze-infer infer?)
 
 
 ;;; Tags

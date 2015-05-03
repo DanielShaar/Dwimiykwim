@@ -83,6 +83,17 @@
 (define (make-begin exp) (cons 'begin exp))
 
 
+;;; Madblock and infer
+
+(define madblock? (special-form? 'madblock))
+(define madblock-actions cdr)
+(define make-madblock (partial-apply cons 'madblock))
+
+(define infer? (special-form? 'infer))
+(define infer-madlab cadr)
+(define infer-required-args cddr)
+
+
 ;;; Madlab (order-agnostic lambda :D)
 
 (define (madlab? exp)
@@ -91,9 +102,14 @@
            (list? (lambda-parameters exp))
            (every pair? (lambda-parameters exp)))))
 ;; (define madlab? (special-form? 'madlab))
+
 ;; This is the same as lambda for now.
 (define madlab-parameters lambda-parameters)
-(define madlab-body lambda-body)
+
+(define (madlab-body exp)
+  ;; Put the parameter names at the beginning of the madblock so the madlab
+  ;; inputs are available for inference.
+  (make-madblock (append (map car (madlab-parameters exp)) (cddr exp))))
 
 
 ;;; If
@@ -149,16 +165,6 @@
 (define (rest-exps seq) (cdr seq))
 ;; Non-tail-recursive vers.
 (define no-more-exps? null?)
-
-
-;;; Madblock and infer
-
-(define madblock? (special-form? 'madblock))
-(define madblock-actions cdr)
-
-(define infer? (special-form? 'infer))
-(define infer-madlab cadr)
-(define infer-required-args cddr)
 
 
 ;;; Let

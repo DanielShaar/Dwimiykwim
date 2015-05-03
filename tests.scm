@@ -119,3 +119,24 @@ greeting
 ;dwimiykwim>
 (x-then-y (tag 4 'y) (tag 3 'x))
 ;=> (#(<tagged> 3 (x)) #(<tagged> 4 (y)))
+
+;dwimiykwim>
+(madblock
+ 42
+ 'its-a-trap
+ (partial-apply list 'funky)
+ 'dont-pick-me-im-a-symbol-not-a-procedure-or-list
+ '(1 3 5 7 8 why-not-9?)
+ (infer mad-map))
+;=> ((funky 1) (funky 3) (funky 5) (funky 7) (funky 8) (funky why-not-9?))
+
+;dwimiykwim>
+(define (funky-map (xs list?) (f procedure?))
+  (list (infer mad-map)
+        (infer mad-map '())
+        (infer mad-map (compose (partial-apply list 'funky) f))))
+;=> ok
+
+;dwimiykwim>
+(funky-map car '((1 2 3 4 5) (6 7 8 9 10) (11 12)))
+;=> ((1 6 11) () ((funky 1) (funky 6) (funky 11)))
