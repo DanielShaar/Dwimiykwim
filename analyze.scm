@@ -139,11 +139,12 @@
         result)))
   (if (null? exps)
       (error "Empty sequence")
-      (let ((procs (map (compose add-result-to-ctx analyze) exps)))
+      (let* ((procs (map (compose add-result-to-ctx analyze) exps))
+             (seqproc (sequential-loop (car procs) (cdr procs))))
         (lambda (env)
           ;; Start with a fresh inference context.
           (fluid-let ((*inference-ctx* '()))
-            ((sequential-loop (car procs) (cdr procs)) env))))))
+            (seqproc env))))))
 
 (defhandler analyze (compose analyze-madsequence madblock-actions) madblock?)
 
@@ -154,18 +155,18 @@
     (unique-semiperfect-matching-with-required vars args-required args edges)))
 
 (define (analyze-infer exp)
-  (lambda (env)
-    (let ((proc ((analyze (infer-madlab exp)) env)))
-      ((madlab-procedure-bproc proc)
-       (extend-environment-twos
-        (let* ((args-required (map (lambda (arg)
-                                     ((analyze arg) env))
-                                   (infer-required-args exp)))
-               (matching (infer-arguments (madlab-procedure-varpreds proc)
-                                          args-required
-                                          *inference-ctx*)))
-          matching)
-        (madlab-procedure-env proc))))))
+  (let ((mproc (analyze (infer-madlab exp)))
+        (aprocs (map analyze (infer-required-args exp))))
+    (lambda (env)
+      (let ((madlab (mproc env)))
+        ((madlab-procedure-bproc madlab)
+         (extend-environment-twos
+          (let* ((args-required (map (lambda (aproc) (aproc env)) aprocs))
+                 (matching (infer-arguments (madlab-procedure-varpreds madlab)
+                                            args-required
+                                            *inference-ctx*)))
+            matching)
+          (madlab-procedure-env madlab)))))))
 
 (defhandler analyze analyze-infer infer?)
 
@@ -193,15 +194,20 @@
 
 (define (analyze-madlab exp)
   ;; A varpred is a two-element list (v p?).
-  (let* ((params (madlab-parameters exp))
+  (let* ((varpreds (madlab-parameters exp))
          (bproc (analyze (madlab-body exp)))
-         (varpreds (lambda (env)
-                     (map (lambda (varpred)
-                            (list (car varpred)
-                                  ((analyze (cadr varpred)) env)))
-                          params))))
+         (vpprocs (map (lambda (varpred)
+                         ;; The car is the variable symbol and the cadr is the
+                         ;; predicate expression.
+                         (let ((pproc (analyze (cadr varpred))))
+                           (lambda (env)
+                             (list (car varpred)
+                                   (pproc env)))))
+                       varpreds)))
     (lambda (env)
-      (make-madlab-procedure (varpreds env) bproc env))))
+      (make-madlab-procedure (map (lambda (vpproc) (vpproc env)) vpprocs)
+                             bproc
+                             env))))
 
 (defhandler analyze analyze-madlab madlab?)
 
