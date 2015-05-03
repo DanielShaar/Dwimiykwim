@@ -6,31 +6,29 @@
   ;; We restrict ourselves to having exactly as many xs as ys. The algorithm
   ;; can miss additional matchings if there are more ys than xs, so this
   ;; restriction is important.
-  (let ((matching (and (= (length xs) (length ys))
-                       (semiperfect-matching xs-to-ys '() xs ys))))
-    (and
-     matching
-     ;; Don't accept if there's another perfect matching.
-     (let ((xs-to-ys (car matching)))
-       (not (any (lambda (edge-rest)
-                   (let ((ys-to-xs (cadr edge-rest))
-                         (x (cadar edge-rest))
-                         (y (caar edge-rest)))
-                     ;; Start where we left off (same xs-to-ys) but with a
-                     ;; single edge from the matching removed (modified
-                     ;; ys-to-xs) and the vertices that were touching that edge
-                     ;; now exposed (both xs and ys are singletons).  This
-                     ;; works because the modified matching has an augmenting
-                     ;; path if and only if it is not maximum.
-                     (augmenting-path xs-to-ys ys-to-xs x (list y))))
-                 ;; Iterate through the ys-to-xs from the matching. Each
-                 ;; y-to-xs is a (y), meaning y is unmatched, or a (y x),
-                 ;; meaning y is matched to x. We only want to look at the
-                 ;; matched ones.
-                 (possible-selections (filter (lambda (y-to-xs)
-                                                (= (length y-to-xs) 2))
-                                              (cadr matching))))))
-     (map reverse (cadr matching)))))
+  (and-let*
+   ((matching (and (= (length xs) (length ys))
+                   (semiperfect-matching xs-to-ys '() xs ys)))
+    (xs-to-ys (car matching))
+    ;; Don't accept if there's another perfect matching.
+    ((not (any (lambda (edge-rest)
+                 (let ((ys-to-xs (cadr edge-rest))
+                       (x (cadar edge-rest))
+                       (y (caar edge-rest)))
+                   ;; Start where we left off (same xs-to-ys) but with a single
+                   ;; edge from the matching removed (modified ys-to-xs) and
+                   ;; the vertices that were touching that edge now exposed
+                   ;; (both xs and ys are singletons). This works because the
+                   ;; modified matching has an augmenting path if and only if
+                   ;; it is not maximum.
+                   (augmenting-path xs-to-ys ys-to-xs x (list y))))
+               ;; Iterate through the ys-to-xs from the matching. Each y-to-xs
+               ;; is a (y), meaning y is unmatched, or a (y x), meaning y is
+               ;; matched to x. We only want to look at the matched ones.
+               (possible-selections (filter (lambda (y-to-xs)
+                                              (= (length y-to-xs) 2))
+                                            (cadr matching)))))))
+   (map reverse (cadr matching))))
 
 ;;; Like unique-perfect-matching except there can be more ys than xs and we can
 ;;; require some of those ys to be in the matching (all xs are already required
@@ -42,39 +40,35 @@
 (define (unique-semiperfect-matching-with-required ys-required xs ys xs-to-ys)
   ;; Start by flipping the edges because we're matching ys (specifically, the
   ;; required ones) to xs.
-  (let* ((ys-to-xs (flip-all xs-to-ys))
-         (required-matching (semiperfect-matching ys-to-xs '() ys-required xs)))
-    (and
-     required-matching
-     ;; Flip the edges back for matching xs to ys.
-     (let* ((xs-to-ys (flip-all (car required-matching)))
-            (ys-to-xs (flip-all (cadr required-matching)))
-            (xs-exposed (exposed-xs ys-to-xs xs))
-            (matching (semiperfect-matching xs-to-ys ys-to-xs xs-exposed ys)))
-       (and
-        matching
-        ;; Don't accpet if there's another semiperfect matching of xs that
-        ;; matches all of ys-required.
-        (let ((xs-to-ys (car matching)))
-          (not (any (lambda (edge-rest)
-                      (let ((ys-to-xs (cadr edge-rest))
-                            (x (cadar edge-rest))
-                            (y (caar edge-rest)))
-                        (if (memq y ys-required)
-                            ;; The y is required, so look for an augmenting
-                            ;; path from y to x, which involves flipping the
-                            ;; graph.
-                            (let ((xs-to-ys (flip-all ys-to-xs))
-                                  (ys-to-xs (flip-all xs-to-ys)))
-                              (augmenting-path ys-to-xs xs-to-ys y (list x)))
-                            ;; The y isn't required, so look for an augmenting
-                            ;; path from x to any exposed y.
-                            (let ((ys (exposed-ys ys-to-xs ys)))
-                              (augmenting-path xs-to-ys ys-to-xs x ys)))))
-                    (possible-selections (filter (lambda (y-to-xs)
-                                                   (= (length y-to-xs) 2))
-                                                 (cadr matching))))))
-        (map reverse (cadr matching)))))))
+  (and-let*
+   ((ys-to-xs (flip-all xs-to-ys))
+    (required-matching (semiperfect-matching ys-to-xs '() ys-required xs))
+    ;; Flip the edges back for matching xs to ys.
+    (xs-to-ys (flip-all (car required-matching)))
+    (ys-to-xs (flip-all (cadr required-matching)))
+    (xs-exposed (exposed-xs ys-to-xs xs))
+    (matching (semiperfect-matching xs-to-ys ys-to-xs xs-exposed ys))
+    (xs-to-ys (car matching))
+    ;; Don't accpet if there's another semiperfect matching of xs that matches
+    ;; all of ys-required.
+    ((not (any (lambda (edge-rest)
+                 (let ((ys-to-xs (cadr edge-rest))
+                       (x (cadar edge-rest))
+                       (y (caar edge-rest)))
+                   (if (memq y ys-required)
+                       ;; The y is required, so look for an augmenting path
+                       ;; from y to x, which involves flipping the graph.
+                       (let ((xs-to-ys (flip-all ys-to-xs))
+                             (ys-to-xs (flip-all xs-to-ys)))
+                         (augmenting-path ys-to-xs xs-to-ys y (list x)))
+                       ;; The y isn't required, so look for an augmenting path
+                       ;; from x to any exposed y.
+                       (let ((ys (exposed-ys ys-to-xs ys)))
+                         (augmenting-path xs-to-ys ys-to-xs x ys)))))
+               (possible-selections (filter (lambda (y-to-xs)
+                                              (= (length y-to-xs) 2))
+                                            (cadr matching)))))))
+   (map reverse (cadr matching))))
 
 (define (possible-selections xs)
   ;; Sends '(a b c d) to '((a (b c d)) (b (a c d)) (c (a b d)) (d (a b c))).
