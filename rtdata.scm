@@ -7,8 +7,7 @@
 
 ;;; Primitive procedures are inherited from Scheme.
 
-(define strict-primitive-procedure? procedure?)
-(define apply-primitive-procedure apply)
+(define primitive-procedure? procedure?)
 
 
 ;;; Compound procedures

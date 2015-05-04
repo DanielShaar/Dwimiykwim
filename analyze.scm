@@ -5,16 +5,40 @@
 
 (define analyze
   (make-generic-operator
-   1 'analyze
+   1
+   'analyze
    (lambda (exp)
      (cond ((application? exp) (analyze-application exp))
            (else (error "Unknown expression type" exp))))))
 
 (define execute-application
   (make-generic-operator
-   2 'execute-application
+   2
+   'execute-application
    (lambda (proc args)
      (error "Unknown procedure type" proc))))
+
+
+;;; Tags
+
+(define (tags x)
+  (if (tagged? x)
+      (%tagged-tags x)
+      '()))
+
+(define (untag x)
+  (if (tagged? x)
+      (%tagged-data x)
+      x))
+
+(define (tag x . names)
+  (%make-tagged (untag x)
+                (append names (tags x))))
+
+(define (apply-tag-aware proc args)
+  (apply (%tag-aware-proc proc) args))
+
+(defhandler execute-application apply-tag-aware tag-aware?)
 
 
 ;;; Applications
@@ -27,12 +51,12 @@
                            (map (lambda (aproc) (aproc env))
                                 aprocs)))))
 
-(defhandler execute-application
-  (lambda (proc args)
-    ;; Underlying scheme doesn't know about tags,
-    ;; so get rid of them.
-    (apply-primitive-procedure proc (map untag args)))
-  strict-primitive-procedure?)
+(define (apply-primitive proc args)
+  ;; Underlying scheme doesn't know about tags,
+  ;; so get rid of them.
+  (apply proc (map untag args)))
+
+(defhandler execute-application apply-primitive strict-primitive-procedure?)
 
 
 ;;; Self-evaluating entities
@@ -131,6 +155,16 @@
 
 (define *inference-ctx* '())
 
+(define (vars-to-args varpreds args)
+  (map (lambda (varpred)
+         (cons (car varpred)
+               (filter (lambda (arg)
+                         ;; Use execute-application to support predicates
+                         ;; defined in the interpreted language.
+                         (execute-application (cadr varpred) (list arg)))
+                       args)))
+       varpreds))
+
 (define (analyze-madsequence exps)
   (define (add-result-to-ctx proc)
     (lambda (env)
@@ -176,24 +210,14 @@
 
 ;;; Madlab (order-agnostic lambda :D)
 
-(define (vars-to-args varpreds args)
-  (map (lambda (varpred)
-         (cons (car varpred)
-               (filter (lambda (arg)
-                         ;; Use execute-application to support predicates
-                         ;; defined in the interpreted language.
-                         (execute-application (cadr varpred) (list arg)))
-                       args)))
-       varpreds))
-
 ;;; Takes in an alist mapping argument variable names to predicates that they
 ;;; must satisfy and a list of argument values. Returns a unique perfect
 ;;; matching of the arugment variables to their matched values if such a
 ;;; matching exists and #f otherwise.
 (define (match-predicates-with-arguments varpreds args)
-  (unique-perfect-matching (map car varpreds)
-                           args
-                           (vars-to-args varpreds args)))
+  (let ((vars (map car varpreds))
+        (edges (vars-to-args varpreds args)))
+    (unique-perfect-matching vars args edges)))
 
 (define (analyze-madlab exp)
   ;; A varpred is a two-element list (v p?).
@@ -214,13 +238,13 @@
 
 (defhandler analyze analyze-madlab madlab?)
 
-(defhandler execute-application
-  (lambda (proc args)
-    ((madlab-procedure-bproc proc)
-     (extend-environment-twos
-      (match-predicates-with-arguments (madlab-procedure-varpreds proc) args)
-      (madlab-procedure-env proc))))
-  madlab-procedure?)
+(define (apply-madlab proc args)
+  ((madlab-procedure-bproc proc)
+   (extend-environment-twos
+    (match-predicates-with-arguments (madlab-procedure-varpreds proc) args)
+    (madlab-procedure-env proc))))
+
+(defhandler execute-application apply-madlab madlab-procedure?)
 
 
 ;;; Begin (a.k.a. sequences)
@@ -241,28 +265,6 @@
         (sequential-loop (car procs) (cdr procs)))))
 
 (defhandler analyze (compose analyze-sequence begin-actions) begin?)
-
-
-;;; Tags
-
-(define (tags x)
-  (if (tagged? x)
-      (%tagged-tags x)
-      '()))
-
-(define (untag x)
-  (if (tagged? x)
-      (%tagged-data x)
-      x))
-
-(define (tag x . names)
-  (%make-tagged (untag x)
-                (append names (tags x))))
-
-(defhandler execute-application
-  (lambda (proc args)
-    (apply-primitive-procedure (%tag-aware-proc proc) args))
-  tag-aware?)
 
 
 ;;; Macros (definitions are in syntax.scm)
