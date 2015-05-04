@@ -1,7 +1,7 @@
-;;; One of two entry points for this file. Takes two lists of vertices, xs and
-;;; ys, and an alist of pairs (x . neighbors-of-x). Returns a list of
-;;; two-element lists (x y) representing the unique perfect matching, if it
-;;; exists, where x is from xs and y is from ys, and returns #f otherwise.
+;; One of two entry points for this file. Takes two lists of vertices, xs and
+;; ys, and an alist of pairs (x . neighbors-of-x). Returns a list of
+;; two-element lists (x y) representing the unique perfect matching, if it
+;; exists, where x is from xs and y is from ys, and returns #f otherwise.
 (define (unique-perfect-matching xs ys xs-to-ys)
   ;; We restrict ourselves to having exactly as many xs as ys. The algorithm
   ;; can miss additional matchings if there are more ys than xs, so this
@@ -30,13 +30,13 @@
                                             (cadr matching)))))))
    (map reverse (cadr matching))))
 
-;;; Like unique-perfect-matching except there can be more ys than xs and we can
-;;; require some of those ys to be in the matching (all xs are already required
-;;; to be in the matching). That is,
-;;;     (unique-semiperfect-matching-with-required '() xs ys xs-to-ys)
-;;; returns the same result as
-;;;     (unique-perfect-matching xs ys xs-to-ys)
-;;; if xs and ys are equal length, though it's likely slower.
+;; Like unique-perfect-matching except there can be more ys than xs and we can
+;; require some of those ys to be in the matching (all xs are already required
+;; to be in the matching). That is,
+;;     (unique-semiperfect-matching-with-required '() xs ys xs-to-ys)
+;; returns the same result as
+;;     (unique-perfect-matching xs ys xs-to-ys)
+;; if xs and ys are equal length, though it's likely slower.
 (define (unique-semiperfect-matching-with-required xs ys-required ys xs-to-ys)
   ;; Start by flipping the edges because we're matching ys (specifically, the
   ;; required ones) to xs.
@@ -90,9 +90,9 @@
 (define (exposed-ys ys-to-xs ys)
   (remove (lambda (y) (assq y ys-to-xs)) ys))
 
-;;; Returns a matching in the form of new xs-to-ys and ys-to-xs in which every
-;;; x is matched or #f if no such matching exists. In particular, ys-to-xs has
-;;; an edge from each matched y to its matched x.
+;; Returns a matching in the form of new xs-to-ys and ys-to-xs in which every
+;; x is matched or #f if no such matching exists. In particular, ys-to-xs has
+;; an edge from each matched y to its matched x.
 (define (semiperfect-matching xs-to-ys ys-to-xs xs-exposed ys-exposed)
   (cond
    ;; We've matched all the xs. There's exactly one edge from each matched y to
