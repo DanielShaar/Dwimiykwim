@@ -56,7 +56,7 @@
   ;; so get rid of them.
   (apply proc (map untag args)))
 
-(defhandler execute-application apply-primitive strict-primitive-procedure?)
+(defhandler execute-application apply-primitive primitive-procedure?)
 
 
 ;;; Self-evaluating entities
