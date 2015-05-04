@@ -148,6 +148,9 @@
 
 (defhandler analyze (compose analyze-madsequence madblock-actions) madblock?)
 
+;; Like match-predicates-with-arguments but only needs a unique semiperfect
+;; matching (all variable-predicate pairs matched). All of args-required is
+;; guaranteed to be matched, and the uniqueness checking accounts for this.
 (define (infer-arguments varpreds args-required ctx)
   (let* ((args (remove (lambda (arg) (memq arg args-required)) ctx))
          (edges (vars-to-args varpreds (append args-required args)))
