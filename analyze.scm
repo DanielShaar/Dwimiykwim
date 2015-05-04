@@ -226,10 +226,7 @@
                                                               args
                                                               edges)))
     (or matching
-        (call-with-current-continuation
-         (make-inference-debugger vars args edges)))))
-
-(define (make-inference-debugger . args) (error "TODO"))
+        (debug-inference ctx vars args edges))))
 
 (define (analyze-infer exp)
   (let ((mproc (analyze (infer-madlab exp)))
