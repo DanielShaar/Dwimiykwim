@@ -73,31 +73,31 @@
 (init)
 
 ;dwimiykwim>
-(define mad-map (madlab ((xs list?) (f procedure?)) (map f xs)))
+(define madmap (madlab ((xs list?) (f procedure?)) (map f xs)))
 ;=> #(<madlab-procedure> ((xs #[compiled-procedure 9 ("list" #x11) #x3 #x4d58e]) (f #[tag-aware 10])) #[compound-procedure 11])
 
 ;dwimiykwim>
-(mad-map list '(1 2 3 4))
+(madmap list '(1 2 3 4))
 ;=> ((1) (2) (3) (4))
 
 ;dwimiykwim>
-(mad-map '(1 2 3 4) list)
+(madmap '(1 2 3 4) list)
 ;=> ((1) (2) (3) (4))
 
 ;dwimiykwim>
-(mad-map '(1 2 3 4) (partial-apply * 4))
+(madmap '(1 2 3 4) (partial-apply * 4))
 ;=> (4 8 12 16)
 
 ;dwimiykwim>
-(mad-map (partial-apply * 4) '(34 3425 254368))
+(madmap (partial-apply * 4) '(34 3425 254368))
 ;=> (136 13700 1017472)
 
 ;dwimiykwim>
-((partial-apply mad-map list) '(1 2 3 4))
+((partial-apply madmap list) '(1 2 3 4))
 ;=> ((1) (2) (3) (4))
 
 ;dwimiykwim>
-(mad-map (partial-apply mad-map '(1 2 3 4)) (list (partial-apply * 42) list))
+(madmap (partial-apply madmap '(1 2 3 4)) (list (partial-apply * 42) list))
 ;=> ((42 84 126 168) ((1) (2) (3) (4)))
 
 ;dwimiykwim>
@@ -113,7 +113,7 @@
 ;=> "hello"
 
 ;dwimiykwim>
-(mad-map (list (tag 4 'four) (tag 6 'six) (tag 7 'eight 'gotcha)) tags)
+(madmap (list (tag 4 'four) (tag 6 'six) (tag 7 'eight 'gotcha)) tags)
 ;=> ((four) (six) (eight gotcha))
 
 ;dwimiykwim>
@@ -132,21 +132,21 @@
  (partial-apply list 'funky)
  'dont-pick-me-im-a-symbol-not-a-procedure-or-list
  '(1 3 5 7 8 why-not-9?)
- (infer mad-map))
+ (infer madmap))
 ;=> ((funky 1) (funky 3) (funky 5) (funky 7) (funky 8) (funky why-not-9?))
 
 ;dwimiykwim>
 (define (funky-map (xs list?) (f procedure?))
   (define thingy
-    (list (infer mad-map)
-          (infer mad-map (compose (partial-apply list 'funky) f))))
-  (infer mad-map thingy))
+    (list (infer madmap)
+          (infer madmap (compose (partial-apply list 'funky) f))))
+  (infer madmap thingy))
 ;=> #(<madlab-procedure> ((xs #[compiled-procedure 9 ("list" #x11) #x3 #x4d58e]) (f #[tag-aware 10])) #[compound-procedure 15])
 
 ;dwimiykwim>
 (define (funky-map-1-to-5 (f procedure?))
   (define xs '(1 2 3 4 5))
-  (infer mad-map))
+  (infer madmap))
 ;=> #(<madlab-procedure> ((f #[tag-aware 10])) #[compound-procedure 16])
 
 ;dwimiykwim>
