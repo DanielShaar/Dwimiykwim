@@ -13,6 +13,41 @@
 \maketitle
 
 
+\section{Tagging}
+
+The first piece of this project that is intended to set groundwork
+for inference and matching, is a lightweight system for tagging data.
+The motivation for tagging data is that it creates a method for
+describing data with useful characteristics that can be used for
+performing argument inference with tag checks as predicates.
+
+Tagged data consists of a value and a list of tags,
+which can be used to describe the significance of the data.
+We can add more tags to data as it moves through a program,
+and remove the tags if we would just like the value.
+However, we can always perform operations on tagged data
+without removing the tags in advanced because procedures by default
+untag data before processing it.
+
+Since MIT Scheme does not come with a nice type system by default,
+tags allow us to work with variables by more generally describing their
+characteristics. As stated earlier, the primary usefulness of these tags
+lies in argument inference.
+By giving values tags, we can match tags to determine if a variable
+is an appropriate argument to a function.
+Functions can request that certain variables have certain tags,
+or more generally, that these variables satisfy predicates.
+This allows us to verify that the user is performing his intentions
+by forcing him/her to think in advance about what really belongs
+in the function call.
+
+Although this tag system does not have to be used in order to perform
+the core features of Dwimiykwim, argument inference,
+and out of order operations, it is convenient to utilize it
+in many cases where the predicate one checks describes a characteristic
+of the data.
+
+
 \section{Argument Inference}
 
 We have written an interpreter for a Scheme-like language
@@ -218,4 +253,90 @@ but procedures generally don't take in more than, say, 8 arguments,
 and $O(8^4)$ is perfectly acceptable running time for our prototype.
 
 
+\section{Debugging}\label{debugging}
+
+In addition to constructing mechanisms for tagging,
+inferring arguments in function calls, and matching function arguments,
+we have created a way for the user to easily correct ambiguity errors
+that arise from more than one possible way to interpret an inference.
+For example, consider the simple \textit{madlab} below:
+\begin{verbbox}
+(define num-str
+ (madlab ((x number?) (y string?))
+         (list y x)))
+\end{verbbox}
+\begin{center}\theverbbox\end{center}
+If we were to call a \textit{madblock} that had two number values and strings,
+then upon inference, we would have an ambiguity error.
+To handle this case, we put the program into debug mode,
+and display the context, edges, and required args to the user.
+The context is indexed, so that the user does not have to spend time
+typing in every expression they would like to force in the matching.
+Using this information, the user is then expected to add new required args
+to settle any ambiguities.
+The reason we ask for required arguments is because those will be used
+in the matching and will usually eliminate multiple matchings.
+Once the user enters some combination of unambiguous args,
+we notify the user of the successful matching and exit debug mode.
+A sample workflow for \textit{num-str} would be:
+\begin{verbbox}
+(madblock
+ 1
+ "foo"
+ 2
+ "bar"
+ (infer num-str))
+
+=== Dwimiykwim Tawimiydkwim ===
+
+Context:
+(0 "bar")
+(1 2)
+(2 "foo")
+(3 1)
+
+Edges:
+(x 1 3)
+(y 0 2)
+
+Required:
+()
+
+New required:
+(0)
+Ambiguous matching!
+
+New required:
+(0 3)
+Unambiguous matching! Terminate debugging mode!
+\end{verbbox}
+\begin{center}\theverbbox\end{center}
+In this example, the user was allowed to test multiple sets of required
+arguments, until one achieved a good matching.
+The user would then be expected to go and correct the code
+by specifying those as required arguments in the inference.
+The new program would now be:
+\begin{verbbox}
+(madblock
+ 1
+ "foo"
+ 2
+ "bar
+ (infer num-str 1 "bar"))
+\end{verbbox}
+\begin{center}\theverbbox\end{center}
+Since the user is providing so many arguments, it would not be very useful
+to use inference unless they modified the code to remove some expressions.
+
+Under the hood of the debugger, when we encounter a bad matching,
+we enter debug mode, indexing each item in the context,
+and print all the information we know about the matching that had an error.
+We ask the user to give us a list of newly required arguments,
+verifying that this is indeed a list of numbers,
+and checking using the matching function if the ambiguity resolves.
+In the case where the user has not specified enough required arguments,
+we ask the user for a new set of required arguments,
+not saving the initial choice.
+This continues until either the user exits the debugger,
+or a good match is found and program terminates with an error.
 \end{document}
