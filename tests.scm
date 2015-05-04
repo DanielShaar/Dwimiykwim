@@ -5,29 +5,41 @@
 
 (load "load")
 
+;Loading "load.scm"...
+;  Loading "utils.scm"... done
+;  Loading "bipartite-matching.scm"... done
+;  Loading "ghelper.scm"... done
+;  Loading "syntax.scm"... done
+;  Loading "rtdata.scm"... done
+;  Loading "analyze.scm"... done
+;  Loading "library.scm"... done
+;  Loading "repl.scm"... done
+;... done
+;Value 2: #[environment 2]
+
 
 ;;; MIT Scheme
 
 (flip-all '((x1 y1 y2) (x2 y1 y2 y3) (x3 y1)))
-;Value: ((y1 x3 x2 x1) (y3 x2) (y2 x2 x1))
+;Value 3: ((y1 x3 x2 x1) (y3 x2) (y2 x2 x1))
 
 (semiperfect-matching
  '((x1 y1 y2) (x2 y1 y2 y3) (x3 y1))
  '()
  '(x1 x2 x3)
  '(y1 y2 y3))
-;Value: (((x3) (x2 y1 y2) (x1 y1)) ((y1 x3) (y3 x2) (y2 x1)))
+;Value 4: (((x3) (x2 y1 y2) (x1 y1)) ((y1 x3) (y3 x2) (y2 x1)))
 
 (unique-perfect-matching '(foo bar)
                          '(foo bar)
                          '((foo foo) (bar bar)))
-;Value: ((bar bar) (foo foo))
+;Value 5: ((bar bar) (foo foo))
 
 (unique-perfect-matching
  '(x1 x2 x3)
  '(y1 y2 y3)
  '((x1 y1 y2) (x2 y1 y2 y3) (x3 y1)))
-;Value: ((x3 y1) (x2 y3) (x1 y2))
+;Value 6: ((x3 y1) (x2 y3) (x1 y2))
 
 (unique-perfect-matching
  '(x1 x2 x3)
@@ -47,16 +59,13 @@
  '(y4)
  '(y1 y2 y3)
  '((x1 y1 y2) (x2 y1 y2 y3 y4) (x3 y1)))
-;Value: ((x3 y1) (x1 y2) (x2 y4))
+;Value 7: ((x3 y1) (x1 y2) (x2 y4))
 
 (define varpreds (list (list 'a symbol?) (list 'b number?) (list 'c string?)))
 ;Value: varpreds
 
 (match-predicates-with-arguments varpreds '(1 "hi" foo))
-;Value: ((c "hi") (b 1) (a foo))
-
-(match-predicates-with-arguments varpreds '(1 foo bar))
-;Value: #f
+;Value 8: ((c "hi") (b 1) (a foo))
 
 
 ;;; Dwimiykwim
@@ -65,7 +74,7 @@
 
 ;dwimiykwim>
 (define mad-map (madlab ((xs list?) (f procedure?)) (map f xs)))
-;=> ok
+;=> #(<madlab-procedure> ((xs #[compiled-procedure 9 ("list" #x11) #x3 #x4d58e]) (f #[tag-aware 10])) #[compound-procedure 11])
 
 ;dwimiykwim>
 (mad-map list '(1 2 3 4))
@@ -93,10 +102,6 @@
 
 ;dwimiykwim>
 (define greeting (tag "hello" 'some 'tags))
-;=> ok
-
-;dwimiykwim>
-greeting
 ;=> #(<tagged> "hello" (some tags))
 
 ;dwimiykwim>
@@ -114,7 +119,7 @@ greeting
 ;dwimiykwim>
 (define (x-then-y (x (has-tag? 'x)) (y (has-tag? 'y)))
   (list x y))
-;=> ok
+;=> #(<madlab-procedure> ((x #[compound-procedure 12]) (y #[compound-procedure 13])) #[compound-procedure 14])
 
 ;dwimiykwim>
 (x-then-y (tag 4 'y) (tag 3 'x))
@@ -132,11 +137,22 @@ greeting
 
 ;dwimiykwim>
 (define (funky-map (xs list?) (f procedure?))
-  (list (infer mad-map)
-        (infer mad-map '())
-        (infer mad-map (compose (partial-apply list 'funky) f))))
-;=> ok
+  (define thingy
+    (list (infer mad-map)
+          (infer mad-map (compose (partial-apply list 'funky) f))))
+  (infer mad-map thingy))
+;=> #(<madlab-procedure> ((xs #[compiled-procedure 9 ("list" #x11) #x3 #x4d58e]) (f #[tag-aware 10])) #[compound-procedure 15])
 
 ;dwimiykwim>
-(funky-map car '((1 2 3 4 5) (6 7 8 9 10) (11 12)))
-;=> ((1 6 11) () ((funky 1) (funky 6) (funky 11)))
+(define (funky-map-1-to-5 (f procedure?))
+  (define xs '(1 2 3 4 5))
+  (infer mad-map))
+;=> #(<madlab-procedure> ((f #[tag-aware 10])) #[compound-procedure 16])
+
+;dwimiykwim>
+(funky-map cdr '((1 2 3 4 5) (6 7 8 9 10) (11 12)))
+;=> (((7 8 9 10) (12)) ((funky (7 8 9 10)) (funky (12))))
+
+;dwimiykwim>
+(funky-map-1-to-5 -)
+;=> (-1 -2 -3 -4 -5)

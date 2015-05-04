@@ -67,6 +67,14 @@
             (cons (cdadr defn)
                   (cddr defn)))))
 
+(define (make-define name body) (cons 'define name body))
+
+;;; Begin (a.k.a. sequences)
+
+(define begin? (special-form? 'begin))
+(define (begin-actions begin-exp) (cdr begin-exp))
+(define (make-begin exp) (cons 'begin exp))
+
 
 ;;; Lambda
 
@@ -80,14 +88,15 @@
 (define lambda-parameters cadr)
 (define lambda-body (compose sequence->begin cddr))
 
-(define (make-begin exp) (cons 'begin exp))
 
-
-;;; Madblock and infer
+;;; Madblock
 
 (define madblock? (special-form? 'madblock))
 (define madblock-actions cdr)
-(define make-madblock (partial-apply cons 'madblock))
+(define (make-madblock exp) (cons 'madblock exp))
+
+
+;;; Infer
 
 (define infer? (special-form? 'infer))
 (define infer-madlab cadr)
@@ -154,17 +163,6 @@
                     (actions (car clauses))
                     (expand (cdr clauses))))))
   (expand (clauses cond-exp)))
-
-
-;;; Begin (a.k.a. sequences)
-
-(define begin? (special-form? 'begin))
-(define (begin-actions begin-exp) (cdr begin-exp))
-(define (last-exp? seq) (null? (cdr seq)))
-(define (first-exp seq) (car seq))
-(define (rest-exps seq) (cdr seq))
-;; Non-tail-recursive vers.
-(define no-more-exps? null?)
 
 
 ;;; Let
