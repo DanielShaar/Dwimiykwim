@@ -4,3 +4,12 @@
 # Emacs
 *~
 \#*\#
+
+# LaTeX
+*.aux
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc
