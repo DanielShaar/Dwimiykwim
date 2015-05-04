@@ -7,7 +7,36 @@
 (define (split-by-indices ctx-values indexed-ctx)
   (map (lambda (ctx-value) (cdr (assq ctx-value indexed-ctx))) ctx-values))
 
-filter
+(define (prompt-with-expr-until-valid expr pred)
+  (let loop ((input (prompt-for-command-expression expr)))
+    (if (pred input)
+        input
+        (begin
+          (pp "Invalid required list!")
+          (loop (prompt-for-command-expression expr))))))
+
+(define (update-inference indexed-ctx vars edges)
+  (let* ((new-required
+          (prompt-with-expr-until-valid "New required:\n"
+                                        (lambda (index-list)
+                                          (and (list? index-list)
+                                               (every number? index-list)))))
+         (ctx-partition ((partition (lambda (value-index)
+                                      (memq (cdr value-index) new-required))
+                                    indexed-ctx)
+                         list))
+         (new-args-required (map car (car ctx-partition)))
+         (new-args (map car (cadr ctx-partition))))
+    (if (unique-semiperfect-matching-with-required vars
+                                                   new-args-required
+                                                   new-args
+                                                   edges)
+        (begin
+          (write-string "Unambiguous matching! Terminate debugging mode!\n")
+          (error "Disambiguate code and run again!"))
+        (begin
+          (write-string "Ambiguous matching!\n")
+          (update-inference indexed-ctx vars edges)))))
 
 ;; Takes in the context, vars, args, and edges, and returns and prints out a
 ;; list of the vars along with the ids and items in the context each var
@@ -35,15 +64,7 @@ filter
     (write-string "Edges:\n")
     (for-each pp vars-to-indices)
     (newline)
-    ;; TODO: factor out this part.
     (write-string "Required:\n")
     (pp required)
     (newline)
-    (let* ((new-required (prompt-for-command-expression "New required:\n"))
-           (ctx-partition ((partition (lambda (value-index)
-                                        (memq (cdr value-index) new-required))
-                                      indexed-ctx)
-                           list))
-           (new-args-required (map car (car ctx-partition)))
-           (new-args (map car (cadr ctx-partition))))
-      (debug-inference vars new-args-required new-args edges))))
+    (update-inference indexed-ctx vars edges)))
