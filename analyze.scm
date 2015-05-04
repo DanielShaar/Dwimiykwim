@@ -226,7 +226,7 @@
                                                               args
                                                               edges)))
     (or matching
-        (debug-inference ctx vars args edges))))
+        (debug-inference vars args-required args edges))))
 
 (define (analyze-infer exp)
   (let ((mproc (analyze (infer-madlab exp)))
