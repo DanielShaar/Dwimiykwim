@@ -26,14 +26,18 @@
       (%tagged-tags x)
       '()))
 
-(define (untag x)
+(define (clear-tags x)
   (if (tagged? x)
       (%tagged-data x)
       x))
 
-(define (tag x . names)
-  (%make-tagged (untag x)
-                (append names (tags x))))
+(define (tag names x)
+  (make-tagged (clear-tags x)
+               (append names (tags x))))
+
+(define (untag names x)
+  (make-tagged (clear-tags x)
+               (remove (lambda (name) (memq name names)) (tags x))))
 
 (define (apply-tag-aware proc args)
   (apply (%tag-aware-proc proc) args))
@@ -54,7 +58,7 @@
 (define (apply-primitive proc args)
   ;; Underlying scheme doesn't know about tags,
   ;; so get rid of them.
-  (apply proc (map untag args)))
+  (apply proc (map clear-tags args)))
 
 (defhandler execute-application apply-primitive primitive-procedure?)
 
@@ -139,7 +143,9 @@
       (let ((procs (map analyze exps)))
         (sequence-loop (car procs) (cdr procs)))))
 
-(defhandler analyze (compose analyze-sequence begin-actions) begin?)
+(defhandler analyze
+  (compose analyze-sequence begin-actions)
+  begin?)
 
 
 ;;; Lambda
@@ -152,17 +158,25 @@
 
 (defhandler analyze analyze-lambda lambda?)
 
-(define (match-argument-trees vars vals)
-  (cond
-   ((null? vars) (if (null? vals)
-                     '()
-                     (error "Too many arguments given" vars vals)))
-   ((pair? vars) (if (pair? vals)
-                     (cons (list (car vars) (car vals))
-                           (match-argument-trees (cdr vars) (cdr vals)))
-                     (error "Too few arguments given" vars vals)))
-   ((symbol? vars) (list (list vars vals)))
-   (else (error "Bad argument variable specification"))))
+(define (match-argument-trees original-vars original-vals)
+  (let loop ((vars original-vars)
+             (vals original-vals))
+    (cond
+     ((null? vars) (if (null? vals)
+                       '()
+                       (begin
+                         (pp (list (list 'vars original-vars)
+                                   (list 'vals original-vals)))
+                         (error "Too many arguments given"))))
+     ((pair? vars) (if (pair? vals)
+                       (cons (list (car vars) (car vals))
+                             (loop (cdr vars) (cdr vals)))
+                       (begin
+                         (pp (list (list 'vars original-vars)
+                                   (list 'vals original-vals)))
+                         (error "Too few arguments given"))))
+     ((symbol? vars) (list (list vars vals)))
+     (else (error "Bad argument variable specification")))))
 
 (defhandler execute-application
   (lambda (proc args)
@@ -194,22 +208,32 @@
         (set! *inference-ctx* (cons result *inference-ctx*))
         result))))
 
-(define (analyze-madsequence exps)
-  (define (add-result-to-ctx proc)
-    (lambda (env)
-      (let ((result (proc env)))
-        (set! *inference-ctx* (cons result *inference-ctx*))
-        result)))
-  (if (null? exps)
-      (error "Empty sequence")
-      (let* ((procs (map analyze-madstep exps))
-             (seqproc (sequence-loop (car procs) (cdr procs))))
-        (lambda (env)
-          ;; Start with a fresh inference context.
-          (fluid-let ((*inference-ctx* '()))
-            (seqproc env))))))
+(define (add-result-to-ctx proc)
+  (lambda (env)
+    (let ((result (proc env)))
+      (set! *inference-ctx* (cons result *inference-ctx*))
+      result)))
 
-(defhandler analyze (compose analyze-madsequence madblock-actions) madblock?)
+(define (analyze-madsequence inherit?)
+  (lambda (exps)
+    (if (null? exps)
+        (error "Empty sequence")
+        (let* ((procs (map analyze-madstep exps))
+               (seqproc (sequence-loop (car procs) (cdr procs))))
+          (lambda (env)
+            ;; Start with a fresh inference context.
+            (fluid-let ((*inference-ctx* (if inherit?
+                                             *inference-ctx*
+                                             '())))
+              (seqproc env)))))))
+
+(defhandler analyze
+  (compose (analyze-madsequence #f) madblock-actions)
+  madblock?)
+
+(defhandler analyze
+  (compose (analyze-madsequence #t) madblock-actions)
+  madblock-inherit?)
 
 
 ;;; Infer
@@ -217,7 +241,7 @@
 ;; Like match-predicates-with-arguments but only needs a unique semiperfect
 ;; matching (all variable-predicate pairs matched). All of args-required is
 ;; guaranteed to be matched, and the uniqueness checking accounts for this.
-(define (infer-arguments varpreds args-required ctx)
+(define (infer-arguments varpreds args-required ctx printable-exp)
   (let* ((args (remove (lambda (arg) (memq arg args-required)) ctx))
          (edges (vars-to-args varpreds (append args-required args)))
          (vars (map car varpreds))
@@ -226,19 +250,20 @@
                                                               args
                                                               edges)))
     (or matching
-        (debug-inference vars args-required args edges))))
+        (debug-inference vars args-required args edges printable-exp))))
 
 (define (analyze-infer exp)
   (let ((mproc (analyze (infer-madlab exp)))
-        (aprocs (map analyze (infer-required-args exp))))
+        (aproc (analyze (infer-required-args exp))))
     (lambda (env)
       (let ((madlab (mproc env)))
         ((madlab-procedure-bproc madlab)
          (extend-environment-twos
-          (let ((args-required (map (lambda (aproc) (aproc env)) aprocs)))
+          (let ((args-required (aproc env)))
             (infer-arguments (madlab-procedure-varpreds madlab)
                              args-required
-                             *inference-ctx*))
+                             *inference-ctx*
+                             exp))
           (madlab-procedure-env madlab)))))))
 
 (defhandler analyze analyze-infer infer?)
@@ -255,7 +280,9 @@
         (edges (vars-to-args varpreds args)))
     (or (unique-perfect-matching vars args edges)
         ;; For now, we're focusing on debugging inference.
-        (error "No unique matching of predicates with arguments." edges))))
+        (begin
+          (pp (list 'edges edges))
+          (error "No unique matching of predicates with arguments.")))))
 
 (define (analyze-madlab exp)
   ;; A varpred is a two-element list (v p?).

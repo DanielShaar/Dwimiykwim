@@ -1,3 +1,5 @@
+;;; Arithmetic
+
 (define (exp? exp)
   (null? (tags exp)))
 
@@ -6,41 +8,134 @@
       (member (car exp) '(+ - * /))
       #f))
 
-(define (binop-op (exp exp?)) (car exp))
-(define (binop-left (exp exp?)) (cadr exp))
-(define (binop-right (exp exp?)) (caddr exp))
+(define (binop-op (exp binop?)) (car exp))
+(define (binop-left (exp binop?)) (cadr exp))
+(define (binop-right (exp binop?)) (caddr exp))
 
 (define (apply-binop (op symbol?)
                      (left (has-tag? 'left))
                      (right (has-tag? 'right)))
-  ((cadr (assoc op
-                (list (list '+ +)
-                      (list '- -)
-                      (list '* *)
-                      (list '/ /))))
+  ((cadr (assq op
+               (list (list '+ +)
+                     (list '- -)
+                     (list '* *)
+                     (list '/ /))))
    left
    right))
 
 ;; ;dwimiykwim>
-;; (apply-binop '+ (tag 4 'left) (tag 2 'right))
+;; (apply-binop '+ (~~ 'left 4) (~~ 'right 2))
 ;; ;=> 6
 
 ;; ;dwimiykwim>
-;; (apply-binop '- (tag 4 'left) (tag 2 'right))
+;; (apply-binop '- (~~ 'left 4) (~~ 'right 2))
 ;; ;=> 2
 
 ;; ;dwimiykwim>
-;; (apply-binop '- (tag 4 'right) (tag 2 'left))
+;; (apply-binop '- (~~ 'right 4) (~~ 'left 2))
 ;; ;=> -2
+
+(define (primitive? (exp exp?)) (number? exp))
+(define (operation? (exp exp?)) (binop? exp))
+(define (it (x any?)) x)
 
 (define (eval (exp exp?))
   (cond
-   ((number? exp)
+   ((?? primitive?)
+    (?? it))
+   ((?? operation?)
+    (madblock-inherit
+     (~~ 'left (eval (?? binop-left)))
+     (~~ 'right (eval (?? binop-right)))
+     (?? binop-op)
+     (?? apply-binop)))))
+
+;; ;dwimiykwim>
+;; (eval '(- (+ 3 4) 9))
+;; ;=> -2
+
+
+;;; Variables
+
+(define ctx? (has-tag? 'ctx))
+
+(define empty-ctx (~~ 'ctx '()))
+
+(define (list-of p?)
+  (lambda (xs)
+    (if (list? xs)
+        (every p? xs)
+        #f)))
+
+(define (bind (ctx ctx?)
+              (vars (list-of symbol?))
+              (vals (list-of number?)))
+  (~~ 'ctx (append (zip list vars vals) (~~:delq 'ctx ctx))))
+
+(define (lookup (ctx ctx?)
+                (var symbol?))
+  (cadr (assq var ctx)))
+
+(define (let? exp)
+  (if (pair? exp)
+      (eq? (car exp) 'let)
+      #f))
+
+(define (let-vars (exp let?))
+  (map car (cadr exp)))
+
+(define (let-vals (exp let?))
+  (map cadr (cadr exp)))
+
+(define (let-body (exp let?))
+  (caddr exp))
+
+;; ;dwimiykwim>
+;; (let-vars '(let ((x (+ 2 2))) (+ x 2)))
+;; ;=> (x)
+
+;; ;dwimiykwim>
+;; (let-vals '(let ((x (+ 2 2))) (+ x 2)))
+;; ;=> ((+ 2 2))
+
+;; ;dwimiykwim>
+;; (let-body '(let ((x (+ 2 2))) (+ x 2)))
+;; ;=> (+ x 2)
+
+;; ;dwimiykwim>
+;; (let? '(let ((x (+ 2 2))) (+ x 2)))
+;; ;=> #t
+
+;; ;dwimiykwim>
+;; (let? '(not-let ((x (+ 2 2))) (+ x 2)))
+;; ;=> #f
+
+(define (variable? (exp exp?)) (symbol? exp))
+(define (declaration? (exp exp?)) (let? exp))
+
+(define (eval (ctx ctx?)
+              (exp exp?))
+  (cond
+   ((?? primitive?)
     exp)
-   ((binop? exp)
-    (madblock
-     exp
-     (tag (eval (infer binop-left)) 'left)
-     (tag (eval (infer binop-right)) 'right)
-     (infer binop-op)
-     (infer apply-binop)))))
+   ((?? operation?)
+    (madblock-inherit
+     (~~ 'left (?? eval (?? binop-left)))
+     (~~ 'right (?? eval (?? binop-right)))
+     (?? binop-op)
+     (?? apply-binop)))
+   ((?? variable?)
+    (?? lookup))
+   ((?? declaration?)
+    (madblock-inherit
+     (map (??:apply eval) (?? let-vals))
+     (?? let-vars)
+     (eval (?? bind) (?? let-body))))))
+
+;; ;dwimiykwim>
+;; (eval
+;;  empty-ctx
+;;  '(let ((x (+ 2 2))
+;;         (y (- 6 3)))
+;;     (+ (* x x) (* y y))))
+;; ;=> 25

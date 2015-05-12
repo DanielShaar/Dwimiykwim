@@ -92,6 +92,7 @@
 ;;; Madblock
 
 (define madblock? (special-form? 'madblock))
+(define madblock-inherit? (special-form? 'madblock-inherit))
 (define madblock-actions cdr)
 (define (make-madblock exp) (cons 'madblock exp))
 
@@ -100,7 +101,10 @@
 
 (define infer? (special-form? 'infer))
 (define infer-madlab cadr)
-(define infer-required-args cddr)
+(define (infer-required-args exp)
+  (if (>= (length exp) 3)
+      (caddr exp)
+      ''()))
 
 
 ;;; Madlab (order-agnostic lambda :D)

@@ -41,7 +41,7 @@
 ;; Takes in the context, vars, args, and edges, and returns and prints out a
 ;; list of the vars along with the ids and items in the context each var
 ;; corresponds to.
-(define (debug-inference vars args-required args edges)
+(define (debug-inference vars args-required args edges printable-exp)
   (let* ((ctx (append args-required args))
          (indexed-ctx (index-ctx (append args-required args)))
          (required (get-indices args-required indexed-ctx))
@@ -53,8 +53,10 @@
                                vars)))
     (newline)
     ;; Tawimiydkwim = then ask what I mean if you don't know what I mean.
-    (write-string "=== Dwimiykwim Tawimiydkwim ===")
+    (write-string "=== Dwimiykwim Tawimiydkwim ===\n")
     (newline)
+    (write-string "Expression:\n")
+    (pp printable-exp)
     (newline)
     (write-string "Context:\n")
     (for-each (lambda (value-index)

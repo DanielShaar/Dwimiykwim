@@ -101,7 +101,7 @@
 ;=> ((42 84 126 168) ((1) (2) (3) (4)))
 
 ;dwimiykwim>
-(define greeting (tag "hello" 'some 'tags))
+(define greeting (~~ '(some tags) "hello"))
 ;=> #(<tagged> "hello" (some tags))
 
 ;dwimiykwim>
@@ -109,11 +109,11 @@
 ;=> (some tags)
 
 ;dwimiykwim>
-(untag greeting)
+(clear-tags greeting)
 ;=> "hello"
 
 ;dwimiykwim>
-(madmap (list (tag 4 'four) (tag 6 'six) (tag 7 'eight 'gotcha)) tags)
+(madmap (list (~~ 'four 4) (~~ 'six 6) (~~ '(eight gotcha) 7)) tags)
 ;=> ((four) (six) (eight gotcha))
 
 ;dwimiykwim>
@@ -122,7 +122,7 @@
 ;=> #(<madlab-procedure> ((x #[compound-procedure 12]) (y #[compound-procedure 13])) #[compound-procedure 14])
 
 ;dwimiykwim>
-(x-then-y (tag 4 'y) (tag 3 'x))
+(x-then-y (~~ 'y 4) (~~ 'x 3))
 ;=> (#(<tagged> 3 (x)) #(<tagged> 4 (y)))
 
 ;dwimiykwim>
@@ -132,21 +132,21 @@
  (partial-apply list 'funky)
  'dont-pick-me-im-a-symbol-not-a-procedure-or-list
  '(1 3 5 7 8 why-not-9?)
- (infer madmap))
+ (?? madmap))
 ;=> ((funky 1) (funky 3) (funky 5) (funky 7) (funky 8) (funky why-not-9?))
 
 ;dwimiykwim>
 (define (funky-map (xs list?) (f procedure?))
   (define thingy
-    (list (infer madmap)
-          (infer madmap (compose (partial-apply list 'funky) f))))
-  (infer madmap thingy))
+    (list (?? madmap)
+          (?? madmap (compose (partial-apply list 'funky) f))))
+  (?? madmap thingy))
 ;=> #(<madlab-procedure> ((xs #[compiled-procedure 9 ("list" #x11) #x3 #x4d58e]) (f #[tag-aware 10])) #[compound-procedure 15])
 
 ;dwimiykwim>
-(define (funky-map-1-to-5 (f procedure?))
+(define (madmap-1-to-5 (f procedure?))
   (define xs '(1 2 3 4 5))
-  (infer madmap))
+  (?? madmap))
 ;=> #(<madlab-procedure> ((f #[tag-aware 10])) #[compound-procedure 16])
 
 ;dwimiykwim>
@@ -154,5 +154,16 @@
 ;=> (((7 8 9 10) (12)) ((funky (7 8 9 10)) (funky (12))))
 
 ;dwimiykwim>
-(funky-map-1-to-5 -)
+(madmap-1-to-5 -)
 ;=> (-1 -2 -3 -4 -5)
+
+;dwimiykwim>
+(define (madcons (x (lambda (x) (not (list? x)))) (xs list?))
+  (cons x xs))
+;=> #(<madlab-procedure> ((x #[compound-procedure 18]) (xs #[compiled-procedure 9 ("list" #x11) #x3 #x4d58e])) #[compound-procedure 19])
+
+;dwimiykwim>
+(madblock
+ '(1 2 3 4)
+ (map (??:apply madcons) '(a b c d)))
+;=> ((a 1 2 3 4) (b 1 2 3 4) (c 1 2 3 4) (d 1 2 3 4))

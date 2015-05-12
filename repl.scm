@@ -34,8 +34,8 @@
 (defhandler printable-representation
   (lambda (x)
     (vector '<tagged>
-            (%tagged-data x)
-            (%tagged-tags x)))
+            (printable-representation (%tagged-data x))
+            (printable-representation (%tagged-tags x))))
   tagged?)
 
 (defhandler printable-representation
@@ -43,6 +43,11 @@
     (cons (printable-representation (car x))
           (printable-representation (cdr x))))
   pair?)
+
+(defhandler printable-representation
+  (lambda (x)
+    (vector-map printable-representation x))
+  vector?)
 
 (define the-global-environment 'not-initialized)
 

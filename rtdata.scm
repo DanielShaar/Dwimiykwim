@@ -43,6 +43,11 @@
   (data %tagged-data)
   (tags %tagged-tags))
 
+(define (make-tagged data tags)
+  (if (null? tags)
+      data
+      (%make-tagged data tags)))
+
 
 ;;; An ENVIRONMENT is a chain of FRAMES, made of vectors.
 

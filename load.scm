@@ -8,13 +8,13 @@
   (access generic-evaluation-environment user-initial-environment))
 
 (load "utils" user-initial-environment)
-(load "debug" user-initial-environment)
 (load "bipartite-matching" user-initial-environment)
 (load "ghelper" user-initial-environment)
 (load "syntax" user-initial-environment)
 (load "rtdata" user-initial-environment)
 
 (load "analyze" generic-evaluation-environment)
+(load "debug" generic-evaluation-environment)
 (load "library" generic-evaluation-environment)
 (load "repl" generic-evaluation-environment)
 
