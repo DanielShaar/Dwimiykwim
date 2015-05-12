@@ -111,13 +111,4 @@
              (list names))
          x))
 
-(define (fold-left (proc procedure?)
-                   (init (has-tag? 'init))
-                   (xs list?))
-  (if (null? xs)
-      (untag '(init) init)
-      (fold-left proc
-                 (~~ 'init (proc (untag '(init) init) (car xs)))
-                 (cdr xs))))
-
 ))
