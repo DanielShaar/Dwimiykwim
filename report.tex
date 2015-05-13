@@ -39,7 +39,7 @@ For example,
   (madlab ((xs list?) (f procedure?))
     (map f xs)))
 \end{verbbox}
-\begin{center}\theverbbox\end{center}
+\begin{quote}\theverbbox\end{quote}
 is a variant of \texttt{map} that can take its arguments in either order.
 We call the resulting procedures ``madlab procedures'' or simply ``madlabs''.
 For most purposes, madlabs are ordinary compound procedures
@@ -50,7 +50,7 @@ For example, if we define
   (lambda more-args
     (apply f (append args more-args))))
 \end{verbbox}
-\begin{center}\theverbbox\end{center}
+\begin{quote}\theverbbox\end{quote}
 then both \texttt{(curry madmap exp)} and
 \texttt{(curry madmap (iota 16))} work as expected,
 raising $e$ to each of the elements of an input list
@@ -59,10 +59,11 @@ Note that the argument matching is not done until the madlab is applied.
 To demonstrate this, consider
 \begin{verbbox}
 (define silly
-  (madlab ((xy (member-of '(x y))) (yz (member-of '(y z))))
+  (madlab ((xy (member-of '(x y)))
+           (yz (member-of '(y z))))
     (list xy yz)))
 \end{verbbox}
-\begin{center}\theverbbox\end{center}
+\begin{quote}\theverbbox\end{quote}
 and the partial application \texttt{(curry silly 'y)},
 where \texttt{member-of} has the obvious namesake meaning.
 When it's applied to \texttt{'x},
@@ -78,7 +79,7 @@ and returns the result of the last one.
 The only difference is that the result of each evaluation in the sequence
 is added to an \emph{inference context},
 which, as we will soon explain,
-is the list of values availabe to \texttt{??}
+is the list of values available to \texttt{??}
 (which performs inference).
 The inference context is dynamically bound
 (the interpreter uses MIT Scheme's \texttt{fluid-let})
@@ -104,7 +105,7 @@ For instance,
  '(1 2 5 3-sir 3)
  (?? madmap))
 \end{verbbox}
-\begin{center}\theverbbox\end{center}
+\begin{quote}\theverbbox\end{quote}
 returns \texttt{((say 1) (say 2) (say 5) (say 3-sir) (say 3))}.
 Inference only succeeds if there is an unambiguous matching
 between the madlab's predicates and the union of the given expressions
@@ -120,7 +121,7 @@ For example, only the first two inferences in
  (?? madmap xs)
  (?? madmap))
 \end{verbbox}
-\begin{center}\theverbbox\end{center}
+\begin{quote}\theverbbox\end{quote}
 will succeed.
 A single procedure, \texttt{(curry list 'say)},
 is in the inference context the whole time.
@@ -168,7 +169,7 @@ We can add more tags to data as it moves through a program,
 and remove the tags if we would just like the value.
 However, we can always perform default operations on tagged data
 without removing the tags in advanced because procedures
-untag data before processing it oustide the interpreter.
+untag data before processing it outside the interpreter.
 This is implemented by making a procedure "tag-aware".
 Being "tag aware" removes tags in logical places,
 so that Scheme functions and other necessary functions
@@ -194,7 +195,7 @@ A simple example to illustrate this point with out-of-order operands
 is ordering tagged operands after receiving them in the wrong order.
 As a quick note, the syntax for tagging data is \textasciitilde\textasciitilde.
 In this example, we tag the numbers 3 and 4 with x and y respectively.
-We make a function \textit{x-then-y} that given a some x and some y,
+We make a function \texttt{x-then-y} that given a some x and some y,
 will make a list first containing x, then y.
 This utilizes the argument matching with tag checking predicates.
 
@@ -207,7 +208,7 @@ This utilizes the argument matching with tag checking predicates.
 (x-then-y (~~ 'y 4) (~~ 'x 3))
 ;=> (#(<tagged> 3 (x)) #(<tagged> 4 (y)))
 \end{verbbox}
-\begin{center}\theverbbox\end{center}
+\begin{quote}\theverbbox\end{quote}
 
 Although this tag system does not have to be used in order to perform
 the core features of Dwimiykwim - argument inference,
@@ -295,14 +296,15 @@ In addition to constructing mechanisms for tagging,
 inferring arguments in function calls, and matching function arguments,
 we have created a way for the user to easily correct ambiguity errors
 that arise from more than one possible way to interpret an inference.
-For example, consider the simple \textit{madlab} below:
+For example, consider the simple madlab below:
 \begin{verbbox}
 (define num-str
  (madlab ((x number?) (y string?))
          (list y x)))
 \end{verbbox}
-\begin{center}\theverbbox\end{center}
-If we were to call a \textit{madblock} that had two number values and strings,
+\begin{quote}\theverbbox\end{quote}
+If we were to call a madblock that had two number values and strings
+in its inference context,
 then upon inference, we would have an ambiguity error.
 To handle this case, we put the program into debug mode,
 and display the context, edges, and required args to the user.
@@ -314,7 +316,7 @@ The reason we ask for required arguments is because those will be used
 in the matching and will usually eliminate multiple matchings.
 Once the user enters some combination of unambiguous args,
 we notify the user of the successful matching and exit debug mode.
-A sample workflow for \textit{num-str} would be:
+A sample workflow for \texttt{num-str} would be:
 \begin{verbbox}
 (madblock
  1
@@ -346,7 +348,7 @@ New required:
 (0 3)
 Unambiguous matching! Terminate debugging mode!
 \end{verbbox}
-\begin{center}\theverbbox\end{center}
+\begin{quote}\theverbbox\end{quote}
 In this example, the user was allowed to test multiple sets of required
 arguments, until one achieved a good matching.
 The user would then be expected to go and correct the code
@@ -360,7 +362,7 @@ The new program would now be:
  "bar
  (?? num-str 1 "bar"))
 \end{verbbox}
-\begin{center}\theverbbox\end{center}
+\begin{quote}\theverbbox\end{quote}
 Since the user is providing so many arguments, it would not be very useful
 to use inference unless they modified the code to remove some expressions.
 
@@ -377,7 +379,7 @@ This continues until either the user exits the debugger,
 or a good match is found and program terminates with an error.
 
 
-\section{Demo}
+\section{Demo and Discussion}
 
 As a taste of writing a real program with Dwimiykwim
 and a demonstration of how much data flow can be inferred,
@@ -414,13 +416,13 @@ where \texttt{x1} must satisfy \texttt{p1?} and so on.
 (define (binop-right (exp binop?))
   (caddr exp))
 \end{verbbox}
-\begin{center}\theverbbox\end{center}
+\begin{quote}\theverbbox\end{quote}
 Here we use madlabs not for disambiguating arguments
 but to allow inference of the single argument
 when there's only a single value in the inference context
 that could possibly be a binary operation expression.
 
-Our application procedure is straighforward
+Our application procedure is straightforward
 other than its use of the new \texttt{has-tag?} predicate:
 \texttt{((has-tag? t) x)} is true when \texttt{x} has tag \texttt{t}.
 \begin{verbbox}
@@ -435,7 +437,7 @@ other than its use of the new \texttt{has-tag?} predicate:
    left
    right))
 \end{verbbox}
-\begin{center}\theverbbox\end{center}
+\begin{quote}\theverbbox\end{quote}
 Even though \texttt{left} and \texttt{right} have tags,
 we can still apply procedures from the underlying Scheme to them.
 The tags are automatically stripped from the arguments of all such procedures
@@ -457,24 +459,31 @@ which are again madlabs for inference rather than argument ordering purposes.
 (define (operation? (exp exp?))
   (binop? exp))
 \end{verbbox}
-\begin{center}\theverbbox\end{center}
+\begin{quote}\theverbbox\end{quote}
+Technical note: we can't just define \texttt{binop?} as a madlab
+that only accepts an expression
+because during inference we need to apply it
+to many values that aren't expressions,
+though this could definitely be handled more intelligently
+by a future version of Dwimiykwim.
 At this point it is probably clear to the reader that
 we have not gone to great lengths to make all of our predicates air-tight,
 but our somewhat lenient definitions of \texttt{exp?} and \texttt{binop?}
-will suffice for this demo.
+suffice for this demo.
 
 We can now finally define our main procedure.
 Recall that \texttt{??} invokes argument inference,
-\verb|~~| tags its second argument with the first,
+\verb|~~| tags its second argument with its first,
 and that the body of \texttt{madlab} expressions
 desugar to madblocks.
-The second case uses \texttt{madblock-inherit},
-which is a varient of \texttt{madblock} that
-uses previous inference context
-in its starting inference context.
-It is probably not wise to use \texttt{madblock-inherit} widely
-given its dependence on context,
-but its use here is mostly harmless and slightly reduces clutter.
+This procedure introduces \texttt{madblock-inherit},
+which is a variant of \texttt{madblock} that
+uses the previous inference context as a starting point
+instead of an empty context.
+It is probably not wise to use \texttt{madblock-inherit} widely,
+but here it is mostly harmless and slightly reduces clutter.
+It is still somewhat safe in that values added to the inference context
+don't leak into the previous inference context.
 \begin{verbbox}
 (define (eval (exp exp?))
   (cond
@@ -482,18 +491,160 @@ but its use here is mostly harmless and slightly reduces clutter.
     exp)
    ((?? operation?)
     (madblock-inherit
-     (~~ 'left (eval (?? binop-left)))
-     (~~ 'right (eval (?? binop-right)))
+     (~~ 'left (?? eval (?? binop-left)))
+     (~~ 'right (?? eval (?? binop-right)))
      (?? binop-op)
      (?? apply-binop)))))
 \end{verbbox}
-\begin{center}\theverbbox\end{center}
+\begin{quote}\theverbbox\end{quote}
 Notice that we almost all of the data flow is inferred:
 the only explicit arguments given are for evaluating
 the left and right subexpressions,
 both of which are expressions, so we need to disambiguate them somehow.
+The \texttt{??} isn't necessary for those \texttt{eval} applications,
+but the intended style is for essentially every application
+to be an inference,
+which, as we'll see shortly, makes it robust to future expansion.
+A quick test shows that everything works as expected.
+\begin{verbbox}
+;dwimiykwim>
+(eval '(- (+ 3 4) 9))
+;=> -2
+\end{verbbox}
+\begin{quote}\theverbbox\end{quote}
 
+Adding \texttt{let} bindings to our expression language
+turns out to be surprisingly little work.
+In particular,
+despite the fact that the evaluation procedure
+will pass around a variable context,
+the two cases we defined above won't change at all!
+The basic operations for the \texttt{let} expressions are below.
+Given what we've seen so far, they are all straightforward.
+\begin{verbbox}
+(define (let? exp)
+  (if (pair? exp)
+      (eq? (car exp) 'let)
+      #f))
 
+(define (let-vars (exp let?))
+  (map car (cadr exp)))
+
+(define (let-vals (exp let?))
+  (map cadr (cadr exp)))
+
+(define (let-body (exp let?))
+  (caddr exp))
+\end{verbbox}
+\begin{quote}\theverbbox\end{quote}
+The story is similar for context operations with one new toy:
+\verb|~~:delq| removes its first argument from the tag list of its second.
+\begin{verbbox}
+(define ctx?
+  (has-tag? 'ctx))
+
+(define empty-ctx
+  (~~ 'ctx '()))
+
+(define (list-of p?)
+  (lambda (xs)
+    (if (list? xs)
+        (every p? xs)
+        #f)))
+
+(define (bind (ctx ctx?)
+              (vars (list-of symbol?))
+              (vals (list-of number?)))
+  (~~ 'ctx (append (zip list vars vals)
+                   (~~:delq 'ctx ctx))))
+
+(define (lookup (ctx ctx?)
+                (var symbol?))
+  (cadr (assq var ctx)))
+\end{verbbox}
+\begin{quote}\theverbbox\end{quote}
+
+We are almost ready to define evaluation,
+but first we need a new inference primitive, \texttt{??:apply}.
+It is actually not a primitive at all
+but defined in Dwimiykwim's standard library.
+\begin{verbbox}
+(define (??:apply proc . args)
+  (lambda more-args
+    (infer proc (append args more-args))))
+\end{verbbox}
+\begin{quote}\theverbbox\end{quote}
+In fact, not even \texttt{??} is a primitive.
+\begin{verbbox}
+(define (?? proc . args)
+  (infer proc args))
+\end{verbbox}
+\begin{quote}\theverbbox\end{quote}
+The real primitive is \texttt{infer},
+which acts like \texttt{??}
+but takes a list instead of a variable number of arguments.
+This enables the definition new inference primitives like \texttt{??:apply}.
+We use the word ``primitive'' not literally
+but to connote that it would be bad style to define too many of these
+context-dependent procedures.
+
+With these pieces, we define predicates for the two new cases
+and a new evaluation procedure.
+The fact that we used \texttt{??} for the \texttt{eval} applications earlier
+means we don't need to change the first two cases.
+\begin{verbbox}
+(define (variable? (exp exp?))
+  (symbol? exp))
+
+(define (declaration? (exp exp?))
+  (let? exp))
+
+(define (eval (ctx ctx?)
+              (exp exp?))
+  (cond
+   ((?? primitive?)
+    exp)
+   ((?? operation?)
+    (madblock-inherit
+     (~~ 'left (?? eval (?? binop-left)))
+     (~~ 'right (?? eval (?? binop-right)))
+     (?? binop-op)
+     (?? apply-binop)))
+   ((?? variable?)
+    (?? lookup))
+   ((?? declaration?)
+    (madblock-inherit
+     (map (??:apply eval) (?? let-vals))
+     (?? let-vars)
+     (eval (?? bind) (?? let-body))))))
+\end{verbbox}
+\begin{quote}\theverbbox\end{quote}
+Once again, we have to provide very few arguments explicitly,
+and once again, \texttt{eval} does what it's supposed to do.
+\begin{verbbox}
+;dwimiykwim>
+(eval
+ empty-ctx
+ '(let ((x (+ 2 2))
+        (y (- 6 3)))
+    (+ (* x x) (* y y))))
+;=> 25
+\end{verbbox}
+\begin{quote}\theverbbox\end{quote}
+
+What happened throughout this demo was that we shifted work from
+the top-level procedure \texttt{eval} to its helper procedures.
+While this first draft of Dwimiykwim is admittedly clunky,
+there is a glimmer of hope in the way that the helper procedures
+self-organize into the top-level procedure
+with just a few essential hints as guidance.
+The approach also benefits safety somewhat
+by requiring the programmer to specify very specifically
+how helper procedures are used.
+This information typically exists anyway in documentation
+(or, worse, in a single programmer's fallible memory),
+and making use of it to write the program
+is a potentially rich area for further research.
 
 
 \end{document}

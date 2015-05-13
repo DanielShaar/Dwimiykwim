@@ -55,8 +55,8 @@
     exp)
    ((?? operation?)
     (madblock-inherit
-     (~~ 'left (eval (?? binop-left)))
-     (~~ 'right (eval (?? binop-right)))
+     (~~ 'left (?? eval (?? binop-left)))
+     (~~ 'right (?? eval (?? binop-right)))
      (?? binop-op)
      (?? apply-binop)))))
 
