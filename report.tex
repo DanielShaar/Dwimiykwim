@@ -201,17 +201,15 @@ given some \texttt{x} and some \texttt{y},
 will make a list containing the \texttt{x} followed by the \texttt{y}.
 This uses the argument matching with the \texttt{has-tag?} predicate:
 \texttt{((has-tag? t) x)} is true when \texttt{x} has tag \texttt{t}.
-
 \begin{Verbatim}
 ;dwimiykwim>
-(define (x-then-y (x (has-tag? 'x)) (y (has-tag? 'y)))
+(define (x-then-y (x (has-tag? 'x))
+                  (y (has-tag? 'y)))
   (list x y))
-
 ;dwimiykwim>
 (x-then-y (~~ 'y 4) (~~ 'x 3))
 ;=> (#(<tagged> 3 (x)) #(<tagged> 4 (y)))
 \end{Verbatim}
-
 Although this tag system does not have to be used in order to perform
 the core features of Dwimiykwim---argument inference
 and out of order operations---it is convenient
