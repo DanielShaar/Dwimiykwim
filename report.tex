@@ -12,49 +12,12 @@
 \begin{document}
 \maketitle
 
-
-\section{Tagging}
-
-The first piece of this project that is intended to set groundwork
-for inference and matching, is a lightweight system for tagging data.
-The motivation for tagging data is that it creates a method for
-describing data with useful characteristics that can be used for
-performing argument inference with tag checks as predicates.
-
-Tagged data consists of a value and a list of tags,
-which can be used to describe the significance of the data.
-We can add more tags to data as it moves through a program,
-and remove the tags if we would just like the value.
-However, we can always perform operations on tagged data
-without removing the tags in advanced because procedures by default
-untag data before processing it.
-
-Since MIT Scheme does not come with a nice type system by default,
-tags allow us to work with variables
-by more generally describing their characteristics.
-As stated earlier, the primary usefulness of these tags
-lies in argument inference.
-By giving values tags, we can match tags to determine if a variable
-is an appropriate argument to a function.
-Functions can request that certain variables have certain tags,
-or more generally, that these variables satisfy predicates.
-This allows us to verify that the user is performing his intentions
-by forcing him/her to think in advance about what really belongs
-in the function call.
-
-Although this tag system does not have to be used in order to perform
-the core features of Dwimiykwim, argument inference,
-and out of order operations, it is convenient to utilize it
-in many cases where the predicate one checks describes a characteristic
-of the data.
-
-
 \section{Argument Inference}
 
 We have written an interpreter for a Scheme-like language
 that supports automatic inference of procedure arguments.
 The core of the argument inference system is in three new special forms:
-\texttt{madlab}, \texttt{madblock}, and \texttt{infer}.
+\texttt{madlab}, \texttt{madblock}, and \texttt{\textasciitilde\textasciitilde}.
 
 The \texttt{madlab} special form is a variation of \texttt{lambda}.
 Specifically, the form creates a procedure
@@ -100,15 +63,16 @@ the \texttt{'y} is matched with \texttt{yz},
 but when it's applied to \texttt{'z},
 the \texttt{'y} is matched with \texttt{xy}.
 
-The \texttt{madlab} special form is a variation of \texttt{begin}.
+The \texttt{madblock} special form is a variation of \texttt{begin}.
 Just like \texttt{begin},
-\texttt{madblock} groups together a sequence of expressions,
+it groups together a sequence of expressions,
 evaluates each of them in turn,
 and returns the result of the last one.
 The only difference is that the result of each evaluation in the sequence
 is added to an \emph{inference context},
 which, as we will soon explain,
-is the list of values availabe to \texttt{infer}.
+is the list of values availabe to \texttt{??} 
+(which performs inference).
 The inference context is dynamically bound
 (the interpreter uses MIT Scheme's \texttt{fluid-let})
 to the empty list at the beginning of each \texttt{madblock},
@@ -119,12 +83,11 @@ using the \texttt{define} special form
 by having \texttt{define} return the result of evaluating its body
 as opposed to an unspecified value or the name it was bound to.
 
-The \texttt{infer} special form is what Dwimiykwim is all about.
+The \texttt{??} special form is what Dwimiykwim is all about.
 It takes a madlab and any number of other expressions
 and applies the madlab to the given expressions
 plus any additional necessary values from the inference context.
-That is, as its name suggests,
-\texttt{infer} infers what arguments to pass to the given madlab.
+That is, it infers what arguments to pass to the given madlab.
 For instance,
 \begin{verbbox}
 (madblock
@@ -132,7 +95,7 @@ For instance,
  'dont-pick-me-im-a-symbol-not-a-procedure-or-list
  "a very distracting string"
  '(1 2 5 3-sir 3)
- (infer madmap))
+ (?? madmap))
 \end{verbbox}
 \begin{center}\theverbbox\end{center}
 returns \texttt{((say 1) (say 2) (say 5) (say 3-sir) (say 3))}.
@@ -146,9 +109,9 @@ For example, only the first two inferences in
 (madblock
  (curry list 'say)
  (define xs '(1 2 5 3-sir 3))
- (infer madmap)
- (infer madmap xs)
- (infer madmap))
+ (?? madmap)
+ (?? madmap xs)
+ (?? madmap))
 \end{verbbox}
 \begin{center}\theverbbox\end{center}
 will succeed.
@@ -157,9 +120,9 @@ is in the inference context the whole time.
 When the first \texttt{infer} happens,
 there is also only one list, so inference succeeds.
 Note, however, that the resulting list is added to the inference context.
-The second \texttt{infer} is explicitly passed a list,
+The second \texttt{??} is explicitly passed a list,
 and inference succeeds thanks to this constraint.
-By the time the third \texttt{infer} happens
+By the time the third \texttt{??} happens
 there are three lists in the inference context,
 so inference fails due to ambiguity.
 
@@ -168,8 +131,8 @@ desugars to a single \texttt{begin} expression,
 the body of a \texttt{madlab} desugars to a single \texttt{madblock}.
 Additionally, each of the argument variables is added as an expression
 to the beginning of the madblock.
-The effect of this is that \texttt{infer} can be used freely
-in the body of a \texttt{madlab}
+The effect of this is that \texttt{??}
+can be used freely in the body of a \texttt{madlab}
 and the arguments are automatically added to the inference context.
 If for some reason we need to keep the arguments out of the context,
 we can write body as a \texttt{madblock} explicitly.
@@ -180,6 +143,69 @@ and mostly invoked implicitly through \texttt{madlab}.
 This is because \texttt{madlab} creates a new environment,
 which is a good idea given the intended synergy with \texttt{define}.
 
+\section{Tagging}
+
+The first piece of this project that is intended to set groundwork
+for inference and matching is a lightweight system for tagging data.
+The motivation for this system is that it creates a method for
+describing data with useful characteristics that can be used for
+performing argument inference with tag checks as predicates.
+Since tags can be arbitrarily created by the user
+and are not limited like type systems usually are,
+the language becomes more flexible.
+
+Tagged data consists of a value and a list of tags,
+which can be used to describe the significance of the data.
+We can add more tags to data as it moves through a program,
+and remove the tags if we would just like the value.
+However, we can always perform default operations on tagged data
+without removing the tags in advanced because procedures
+untag data before processing it oustide the interpreter. 
+This is implemented by making a procedure "tag-aware".
+Being "tag aware" removes tags in logical places, 
+so that Scheme functions and other necessary functions
+can operate as intended when the tags are not important.
+For example, car and cdr should be "tag aware" because
+the record type for tagged data is a list,
+but we only care for the actual data being tagged.
+
+As stated earlier, since MIT Scheme does not come 
+with a nice type system by default,
+tags allow us to work with variables
+by more generally describing their characteristics.
+The primary usefulness of these tags lies in argument matching.
+By giving values tags, we can match tags to tag predicates
+to determine if a variable is an appropriate argument to a function.
+Functions can request that certain variables have certain tags,
+or more generally, that these variables satisfy arbitrary predicates.
+This allows us to verify that the user is performing the intended task
+by forcing him/her to think in advance about what really belongs
+in the function call.
+
+A simple example to illustrate this point with out-of-order operands
+is ordering tagged operands after receiving them in the wrong order.
+As a quick note, the syntax for tagging data is \textasciitilde\textasciitilde.
+In this example, we tag the numbers 3 and 4 with x and y respectively.
+We make a function \textit{x-then-y} that given a some x and some y,
+will make a list first containing x, then y. 
+This utilizes the argument matching with tag checking predicates.
+
+\begin{verbbox}
+;dwimiykwim>
+(define (x-then-y (x (has-tag? 'x)) (y (has-tag? 'y)))
+  (list x y))
+
+;dwimiykwim>
+(x-then-y (~~ 'y 4) (~~ 'x 3))
+;=> (#(<tagged> 3 (x)) #(<tagged> 4 (y)))
+\end{verbbox}
+\begin{center}\theverbbox\end{center}
+
+Although this tag system does not have to be used in order to perform
+the core features of Dwimiykwim - argument inference,
+and out of order operations - it is convenient to utilize it
+in many cases where the predicate one checks
+describes a characteristic of the data.
 
 \section{Bipartite Matching}\label{bipartite}
 
@@ -286,7 +312,7 @@ A sample workflow for \textit{num-str} would be:
  "foo"
  2
  "bar"
- (infer num-str))
+ (?? num-str))
 
 === Dwimiykwim Tawimiydkwim ===
 
@@ -323,7 +349,7 @@ The new program would now be:
  "foo"
  2
  "bar
- (infer num-str 1 "bar"))
+ (?? num-str 1 "bar"))
 \end{verbbox}
 \begin{center}\theverbbox\end{center}
 Since the user is providing so many arguments, it would not be very useful
