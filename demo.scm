@@ -1,16 +1,21 @@
-;;; Arithmetic
+;;;; Demo: an evaluator for arithmetic expressions with let bindings
 
-(define (exp? exp)
-  (null? (tags exp)))
+
+;;; Arithmetic
 
 (define (binop? exp)
   (if (pair? exp)
       (member (car exp) '(+ - * /))
       #f))
 
-(define (binop-op (exp binop?)) (car exp))
-(define (binop-left (exp binop?)) (cadr exp))
-(define (binop-right (exp binop?)) (caddr exp))
+(define (binop-op (exp binop?))
+  (car exp))
+
+(define (binop-left (exp binop?))
+  (cadr exp))
+
+(define (binop-right (exp binop?))
+  (caddr exp))
 
 (define (apply-binop (op symbol?)
                      (left (has-tag? 'left))
@@ -35,14 +40,19 @@
 ;; (apply-binop '- (~~ 'right 4) (~~ 'left 2))
 ;; ;=> -2
 
-(define (primitive? (exp exp?)) (number? exp))
-(define (operation? (exp exp?)) (binop? exp))
-(define (it (x any?)) x)
+(define (exp? x)
+  (null? (tags x)))
+
+(define (primitive? (exp exp?))
+  (number? exp))
+
+(define (operation? (exp exp?))
+  (binop? exp))
 
 (define (eval (exp exp?))
   (cond
    ((?? primitive?)
-    (?? it))
+    exp)
    ((?? operation?)
     (madblock-inherit
      (~~ 'left (eval (?? binop-left)))
@@ -55,11 +65,13 @@
 ;; ;=> -2
 
 
-;;; Variables
+;;; Let bindings
 
-(define ctx? (has-tag? 'ctx))
+(define ctx?
+  (has-tag? 'ctx))
 
-(define empty-ctx (~~ 'ctx '()))
+(define empty-ctx
+  (~~ 'ctx '()))
 
 (define (list-of p?)
   (lambda (xs)
@@ -110,8 +122,11 @@
 ;; (let? '(not-let ((x (+ 2 2))) (+ x 2)))
 ;; ;=> #f
 
-(define (variable? (exp exp?)) (symbol? exp))
-(define (declaration? (exp exp?)) (let? exp))
+(define (variable? (exp exp?))
+  (symbol? exp))
+
+(define (declaration? (exp exp?))
+  (let? exp))
 
 (define (eval (ctx ctx?)
               (exp exp?))

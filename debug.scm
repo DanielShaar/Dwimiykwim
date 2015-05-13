@@ -55,9 +55,11 @@
     ;; Tawimiydkwim = then ask what I mean if you don't know what I mean.
     (write-string "=== Dwimiykwim Tawimiydkwim ===\n")
     (newline)
-    (write-string "Expression:\n")
-    (pp printable-exp)
-    (newline)
+    ;; Removed for now because the expression isn't yet useful when we use ??
+    ;; instead of infer.
+    ;; (write-string "Expression:\n")
+    ;; (pp printable-exp)
+    ;; (newline)
     (write-string "Context:\n")
     (for-each (lambda (value-index)
                 (pp (list (cdr value-index) (car value-index))))

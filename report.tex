@@ -2,7 +2,13 @@
 \usepackage[charter]{mathdesign}
 \usepackage{amsmath, verbatimbox}
 
-\newtheorem{lemma}{Lemma}
+% Avoids spacing issues in \texttt.
+\makeatletter
+\let\ttfamily\relax % avoid a spurious warning
+\DeclareRobustCommand\ttfamily
+        {\not@math@alphabet\ttfamily\mathtt
+         \fontfamily\ttdefault\selectfont\frenchspacing}
+\makeatother
 
 \title{6.945 Final Project \\ \emph{Dwimiykwim}}
 \author{Ziv Scully (\texttt{ziv@mit.edu}) \\
@@ -11,6 +17,7 @@
 
 \begin{document}
 \maketitle
+
 
 \section{Argument Inference}
 
@@ -71,7 +78,7 @@ and returns the result of the last one.
 The only difference is that the result of each evaluation in the sequence
 is added to an \emph{inference context},
 which, as we will soon explain,
-is the list of values availabe to \texttt{??} 
+is the list of values availabe to \texttt{??}
 (which performs inference).
 The inference context is dynamically bound
 (the interpreter uses MIT Scheme's \texttt{fluid-let})
@@ -143,6 +150,7 @@ and mostly invoked implicitly through \texttt{madlab}.
 This is because \texttt{madlab} creates a new environment,
 which is a good idea given the intended synergy with \texttt{define}.
 
+
 \section{Tagging}
 
 The first piece of this project that is intended to set groundwork
@@ -160,16 +168,16 @@ We can add more tags to data as it moves through a program,
 and remove the tags if we would just like the value.
 However, we can always perform default operations on tagged data
 without removing the tags in advanced because procedures
-untag data before processing it oustide the interpreter. 
+untag data before processing it oustide the interpreter.
 This is implemented by making a procedure "tag-aware".
-Being "tag aware" removes tags in logical places, 
+Being "tag aware" removes tags in logical places,
 so that Scheme functions and other necessary functions
 can operate as intended when the tags are not important.
 For example, car and cdr should be "tag aware" because
 the record type for tagged data is a list,
 but we only care for the actual data being tagged.
 
-As stated earlier, since MIT Scheme does not come 
+As stated earlier, since MIT Scheme does not come
 with a nice type system by default,
 tags allow us to work with variables
 by more generally describing their characteristics.
@@ -187,7 +195,7 @@ is ordering tagged operands after receiving them in the wrong order.
 As a quick note, the syntax for tagging data is \textasciitilde\textasciitilde.
 In this example, we tag the numbers 3 and 4 with x and y respectively.
 We make a function \textit{x-then-y} that given a some x and some y,
-will make a list first containing x, then y. 
+will make a list first containing x, then y.
 This utilizes the argument matching with tag checking predicates.
 
 \begin{verbbox}
@@ -206,6 +214,7 @@ the core features of Dwimiykwim - argument inference,
 and out of order operations - it is convenient to utilize it
 in many cases where the predicate one checks
 describes a characteristic of the data.
+
 
 \section{Bipartite Matching}\label{bipartite}
 
@@ -366,4 +375,125 @@ we ask the user for a new set of required arguments,
 not saving the initial choice.
 This continues until either the user exits the debugger,
 or a good match is found and program terminates with an error.
+
+
+\section{Demo}
+
+As a taste of writing a real program with Dwimiykwim
+and a demonstration of how much data flow can be inferred,
+we devote this section to walking through the process of a sample program.
+We will start by building an evaluator for arithmetic expressions
+then extend it to include Scheme-style \texttt{let} bindings.
+Along the way, we'll discuss some further minor features of Dwimiykwim
+that would have been distracting details in the previous exposition
+but are nice to have in practice.
+
+The main task for our arithmetic evaluator is evaluating binary operations.
+(We leave generalizing to $n$-ary operations as an exercise to the reader
+best tried after reading this entire section.)
+As a fist step, we should be able to identify
+when an expression is a binary operation
+and, if it is one, extract the operation name and arguments.
+Just as \texttt{(define (f x1 $\dots$ xn) $\dots$)}
+desugars to a \texttt{lambda} expression,
+\texttt{(define (f (x1 p1?) $\dots$ (xn pn?)) $\dots$)}
+desugars to a \texttt{madlab} expression
+where \texttt{x1} must satisfy \texttt{p1?} and so on.
+\begin{verbbox}
+(define (binop? exp)
+  (if (pair? exp)
+      (member (car exp) '(+ - * /))
+      #f))
+
+(define (binop-op (exp binop?))
+  (car exp))
+
+(define (binop-left (exp binop?))
+  (cadr exp))
+
+(define (binop-right (exp binop?))
+  (caddr exp))
+\end{verbbox}
+\begin{center}\theverbbox\end{center}
+Here we use madlabs not for disambiguating arguments
+but to allow inference of the single argument
+when there's only a single value in the inference context
+that could possibly be a binary operation expression.
+
+Our application procedure is straighforward
+other than its use of the new \texttt{has-tag?} predicate:
+\texttt{((has-tag? t) x)} is true when \texttt{x} has tag \texttt{t}.
+\begin{verbbox}
+(define (apply-binop (op symbol?)
+                     (left (has-tag? 'left))
+                     (right (has-tag? 'right)))
+  ((cadr (assq op
+               (list (list '+ +)
+                     (list '- -)
+                     (list '* *)
+                     (list '/ /))))
+   left
+   right))
+\end{verbbox}
+\begin{center}\theverbbox\end{center}
+Even though \texttt{left} and \texttt{right} have tags,
+we can still apply procedures from the underlying Scheme to them.
+The tags are automatically stripped from the arguments of all such procedures
+with a short list of exceptions including \texttt{cons} and \texttt{list}
+that allow for tagged data to exist in larger data structures.
+
+The plan for the evaluation procedure is to dispatch to two cases
+depending on whether the expression is a primitive number
+or a binary operation expression.
+We decide between the cases using the following madlabs,
+which are again madlabs for inference rather than argument ordering purposes.
+\begin{verbbox}
+(define (exp? x)
+  (null? (tags x)))
+
+(define (primitive? (exp exp?))
+  (number? exp))
+
+(define (operation? (exp exp?))
+  (binop? exp))
+\end{verbbox}
+\begin{center}\theverbbox\end{center}
+At this point it is probably clear to the reader that
+we have not gone to great lengths to make all of our predicates air-tight,
+but our somewhat lenient definitions of \texttt{exp?} and \texttt{binop?}
+will suffice for this demo.
+
+We can now finally define our main procedure.
+Recall that \texttt{??} invokes argument inference,
+\verb|~~| tags its second argument with the first,
+and that the body of \texttt{madlab} expressions
+desugar to madblocks.
+The second case uses \texttt{madblock-inherit},
+which is a varient of \texttt{madblock} that
+uses previous inference context
+in its starting inference context.
+It is probably not wise to use \texttt{madblock-inherit} widely
+given its dependence on context,
+but its use here is mostly harmless and slightly reduces clutter.
+\begin{verbbox}
+(define (eval (exp exp?))
+  (cond
+   ((?? primitive?)
+    exp)
+   ((?? operation?)
+    (madblock-inherit
+     (~~ 'left (eval (?? binop-left)))
+     (~~ 'right (eval (?? binop-right)))
+     (?? binop-op)
+     (?? apply-binop)))))
+\end{verbbox}
+\begin{center}\theverbbox\end{center}
+Notice that we almost all of the data flow is inferred:
+the only explicit arguments given are for evaluating
+the left and right subexpressions,
+both of which are expressions, so we need to disambiguate them somehow.
+
+
+
+
 \end{document}
