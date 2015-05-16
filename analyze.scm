@@ -19,6 +19,12 @@
            (else (error "Unknown expression type" exp))))))
 
 
+;;; Debugging
+
+;; It's a fluid-let hack....
+(define *history* '())
+
+
 ;;; Tags
 
 (define (tags x)
@@ -51,11 +57,12 @@
   (let ((fproc (analyze (operator exp)))
         (aprocs (map analyze (operands exp))))
     (lambda (env)
-      (execute-application (fproc env)
-                           (map (lambda (aproc) (aproc env))
-                                aprocs)))))
+      (fluid-let ((*history* (cons exp *history*)))
+        (execute-application (fproc env)
+                             (map (lambda (aproc) (aproc env))
+                                  aprocs))))))
 
-(define primitivize-procedure
+(define (primitivize-if-procedure x)
   (if (any-procedure? x)
       (lambda args
         (execute-application x args))
@@ -64,7 +71,7 @@
 (define (apply-primitive proc args)
   ;; Underlying scheme doesn't know about tags,
   ;; so get rid of them.
-  (apply proc (map (compose primitivize-procedure clear-tags) args)))
+  (apply proc (map (compose primitivize-if-procedure clear-tags) args)))
 
 (defhandler execute-application apply-primitive primitive-procedure?)
 
@@ -274,7 +281,7 @@
             (infer-arguments (madlab-procedure-varpreds madlab)
                              args-required
                              *inference-ctx*
-                             exp))
+                             *history*))
           (madlab-procedure-env madlab)))))))
 
 (defhandler analyze analyze-infer infer?)
