@@ -5,7 +5,7 @@
 (define the-unspecified-value (list 'the-unspecified-value))
 
 
-;;; Primitive procedures are inherited from Scheme.
+;;; Primitive procedures (inherited from Scheme)
 
 (define primitive-procedure? procedure?)
 
@@ -30,7 +30,7 @@
   (env madlab-procedure-env))
 
 
-;;; Tagged data and tag-aware procedures.
+;;; Tagged data and tag-aware procedures
 
 (define-record-type <tag-aware>
   (%make-tag-aware proc)
@@ -49,7 +49,16 @@
       (%make-tagged data tags)))
 
 
-;;; An ENVIRONMENT is a chain of FRAMES, made of vectors.
+;;; Procedures in general
+
+(define (any-procedure? f)
+  (or (primitive-procedure? f)
+      (tag-aware? f)
+      (compound-procedure? f)
+      (madlab-procedure? f)))
+
+
+;;; Environments
 
 (define (extend-environment-twos var-val-twos base-environment)
   (let ((vars-vals (list-of-twos->two-lists var-val-twos)))
@@ -57,6 +66,7 @@
                         (cadr vars-vals)
                         base-environment)))
 
+;; Environments are chains of frames, which are made of vectors.
 (define (extend-environment variables values base-environment)
   (if (fix:= (length variables) (length values))
       (vector variables values base-environment)
@@ -80,12 +90,6 @@
 	  (cond ((null? vars) (plp (vector-ref env 2)))
 		((eq? var (car vars)) (car vals))
 		(else (scan (cdr vars) (cdr vals))))))))
-
-
-;;; Extension to make underlying Scheme values available to interpreter
-
-(define (lookup-scheme-value var)
-  (lexical-reference generic-evaluation-environment var))
 
 (define (define-variable! var val env)
   (if (eq? env the-empty-environment)
@@ -111,3 +115,9 @@
 	  (cond ((null? vars) (plp (vector-ref env 2)))
 		((eq? var (car vars)) (set-car! vals val))
 		(else (scan (cdr vars) (cdr vals))))))))
+
+
+;;; Extension to make underlying Scheme values available to interpreter
+
+(define (lookup-scheme-value var)
+  (lexical-reference generic-evaluation-environment var))

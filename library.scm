@@ -13,13 +13,8 @@
      ;; The cons* allows the usage (apply f arg1 arg2 ... rest-of-args).
      (execute-application f (apply cons* args)))))
 
-(define lib:procedure?
-  (%make-tag-aware
-   (lambda (f)
-     (or (procedure? f)
-         (tag-aware? f)
-         (compound-procedure? f)
-         (madlab-procedure? f)))))
+;; It's not tag-aware, so it strips tags, which is what we want.
+(define lib:procedure? any-procedure?)
 
 
 ;;; Dwimiykwim
@@ -27,7 +22,6 @@
 (define lib:tag (%make-tag-aware tag))
 (define lib:tags (%make-tag-aware tags))
 (define lib:untag (%make-tag-aware untag))
-;; It's not tag-aware, so it strips tags.
 (define lib:clear-tags identity)
 
 
@@ -45,20 +39,6 @@
 (define apply lib:apply)
 (define procedure? lib:procedure?)
 
-(define (map f xs)
-  (if (null? xs)
-      '()
-      (cons (f (car xs)) (map f (cdr xs)))))
-
-(define (filter keep? xs)
-  (if (null? xs)
-      '()
-      (let ((x (car xs))
-            (rest (filter keep? (cdr xs))))
-        (if (keep? x)
-            (cons x rest)
-            rest))))
-
 
 ;;; Utils
 
@@ -73,12 +53,6 @@
 (define (partial-apply f . args)
   (lambda more-args
      (apply f (append args more-args))))
-
-(define (zip f xs ys)
-  (cond
-   ((null? xs) '())
-   ((null? ys) '())
-   (else (cons (f (car xs) (car ys)) (zip f (cdr xs) (cdr ys))))))
 
 
 ;;; Dwimiykwim

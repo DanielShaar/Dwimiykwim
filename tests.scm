@@ -150,6 +150,18 @@
 ;=> #(<madlab-procedure> ((f #[tag-aware 10])) #[compound-procedure 16])
 
 ;dwimiykwim>
+(madmap (~~ 'tagged-function (lambda (x) (+ 1 x))) '(1 2 3 4 5))
+;=> (2 3 4 5 6)
+
+;dwimiykwim>
+(map (~~ 'tagged-madlab
+         (lambda ((x number?) (y symbol?))
+           (list y x)))
+     '(1 b 3 4 e)
+     '(a 2 c d 5))
+;=> ((a 1) (b 2) (c 3) (d 4) (e 5))
+
+;dwimiykwim>
 (funky-map cdr '((1 2 3 4 5) (6 7 8 9 10) (11 12)))
 ;=> (((7 8 9 10) (12)) ((funky (7 8 9 10)) (funky (12))))
 

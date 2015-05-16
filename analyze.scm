@@ -18,6 +18,12 @@
    (lambda (proc args)
      (error "Unknown procedure type" proc))))
 
+(define primitivize
+  (make-generic-operator
+   1
+   'primitivize
+   identity))
+
 
 ;;; Tags
 
@@ -58,9 +64,20 @@
 (define (apply-primitive proc args)
   ;; Underlying scheme doesn't know about tags,
   ;; so get rid of them.
-  (apply proc (map clear-tags args)))
+  (apply proc (map (compose primitivize clear-tags) args)))
 
 (defhandler execute-application apply-primitive primitive-procedure?)
+
+(define (apply-tagged proc args)
+  (execute-application (clear-tags proc) args))
+
+(defhandler execute-application apply-tagged tagged?)
+
+(defhandler primitivize
+  (lambda (proc)
+    (lambda args
+      (execute-application proc args)))
+  any-procedure?)
 
 
 ;;; Self-evaluating entities
