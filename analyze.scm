@@ -3,14 +3,6 @@
 (define (eval exp env)
   ((analyze exp) env))
 
-(define analyze
-  (make-generic-operator
-   1
-   'analyze
-   (lambda (exp)
-     (cond ((application? exp) (analyze-application exp))
-           (else (error "Unknown expression type" exp))))))
-
 (define execute-application
   (make-generic-operator
    2
@@ -18,11 +10,13 @@
    (lambda (proc args)
      (error "Unknown procedure type" proc))))
 
-(define primitivize
+(define analyze
   (make-generic-operator
    1
-   'primitivize
-   identity))
+   'analyze
+   (lambda (exp)
+     (cond ((application? exp) (analyze-application exp))
+           (else (error "Unknown expression type" exp))))))
 
 
 ;;; Tags
@@ -61,10 +55,16 @@
                            (map (lambda (aproc) (aproc env))
                                 aprocs)))))
 
+(define primitivize-procedure
+  (if (any-procedure? x)
+      (lambda args
+        (execute-application x args))
+      x))
+
 (define (apply-primitive proc args)
   ;; Underlying scheme doesn't know about tags,
   ;; so get rid of them.
-  (apply proc (map (compose primitivize clear-tags) args)))
+  (apply proc (map (compose primitivize-procedure clear-tags) args)))
 
 (defhandler execute-application apply-primitive primitive-procedure?)
 
@@ -72,12 +72,6 @@
   (execute-application (clear-tags proc) args))
 
 (defhandler execute-application apply-tagged tagged?)
-
-(defhandler primitivize
-  (lambda (proc)
-    (lambda args
-      (execute-application proc args)))
-  any-procedure?)
 
 
 ;;; Self-evaluating entities
@@ -195,13 +189,13 @@
      ((symbol? vars) (list (list vars vals)))
      (else (error "Bad argument variable specification")))))
 
-(defhandler execute-application
-  (lambda (proc args)
-    ((compound-procedure-bproc proc)
-     (extend-environment-twos
-      (match-argument-trees (compound-procedure-vars proc) args)
-      (compound-procedure-env proc))))
-  compound-procedure?)
+(define (apply-compound proc args)
+  ((compound-procedure-bproc proc)
+   (extend-environment-twos
+    (match-argument-trees (compound-procedure-vars proc) args)
+    (compound-procedure-env proc))))
+
+(defhandler execute-application apply-compound compound-procedure?)
 
 
 ;;; Madblock
