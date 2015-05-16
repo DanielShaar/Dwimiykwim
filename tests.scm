@@ -179,3 +179,10 @@
  '(1 2 3 4)
  (map (??:apply madcons) '(a b c d)))
 ;=> ((a 1 2 3 4) (b 1 2 3 4) (c 1 2 3 4) (d 1 2 3 4))
+
+;dwimiykwim>
+(madblock
+ 'a
+ 4
+ (map (??:apply (madlab ((x number?) (y symbol?)) (list x y))) '(6 b)))
+;=> ((6 a) (4 b))

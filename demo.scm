@@ -4,9 +4,8 @@
 ;;; Arithmetic
 
 (define (binop? exp)
-  (if (pair? exp)
-      (member (car exp) '(+ - * /))
-      #f))
+  (and (pair? exp)
+       (member (car exp) '(+ - * /))))
 
 (define (binop-op (exp binop?))
   (car exp))
@@ -75,23 +74,22 @@
 
 (define (list-of p?)
   (lambda (xs)
-    (if (list? xs)
-        (every p? xs)
-        #f)))
+    (and (list? xs)
+         (every p? xs))))
 
-(define (bind (ctx ctx?)
-              (vars (list-of symbol?))
-              (vals (list-of number?)))
-  (~~ 'ctx (append (zip list vars vals) (~~:delq 'ctx ctx))))
+(define (extend-ctx (ctx ctx?)
+                    (vars (list-of symbol?))
+                    (vals (list-of number?)))
+  (~~ 'ctx (append (map list vars vals)
+                   (~~:delq 'ctx ctx))))
 
 (define (lookup (ctx ctx?)
                 (var symbol?))
   (cadr (assq var ctx)))
 
 (define (let? exp)
-  (if (pair? exp)
-      (eq? (car exp) 'let)
-      #f))
+  (and (pair? exp)
+       (eq? (car exp) 'let)))
 
 (define (let-vars (exp let?))
   (map car (cadr exp)))
@@ -145,12 +143,8 @@
     (madblock-inherit
      (map (??:apply eval) (?? let-vals))
      (?? let-vars)
-     (eval (?? bind) (?? let-body))))))
+     (eval (?? extend-ctx) (?? let-body))))))
 
 ;; ;dwimiykwim>
-;; (eval
-;;  empty-ctx
-;;  '(let ((x (+ 2 2))
-;;         (y (- 6 3)))
-;;     (+ (* x x) (* y y))))
+;; (eval empty-ctx '(let ((x (+ 2 2)) (y (- 6 3))) (+ (* x x) (* y y))))
 ;; ;=> 25

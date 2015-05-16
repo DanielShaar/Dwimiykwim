@@ -67,7 +67,6 @@
             (cons (cdadr defn)
                   (cddr defn)))))
 
-(define (make-define name body) (cons 'define name body))
 
 ;;; Begin (a.k.a. sequences)
 
@@ -87,6 +86,7 @@
 (define lambda? (special-form? 'lambda))
 (define lambda-parameters cadr)
 (define lambda-body (compose sequence->begin cddr))
+(define (make-lambda args body) (list 'lambda args body))
 
 
 ;;; Madblock
@@ -169,6 +169,23 @@
   (expand (clauses cond-exp)))
 
 
+;;; And and or
+
+;; Turns out it's more difficult to write or as a macro than to just write its
+;; evaluation procedure directly. An and expression always returns either the
+;; last expression or #f (or #t if it's empty), which easily becomes nested if
+;; statements, but we don't know what the return value of an or might be. In
+;; particular, after checking a condition, we might have to return it, but we
+;; can't evaluate it again. It's not too hard to make this happen using let or
+;; lambda, but doing so in a way that avoids possible variable name collisions
+;; is more trouble than its worth. Given that we're evaluating or directly,
+;; it's also easy to do the same for and.
+(define and? (special-form? 'and))
+(define and-clauses cdr)
+(define or? (special-form? 'or))
+(define or-clauses cdr)
+
+
 ;;; Let
 
 (define let? (special-form? 'let))
@@ -183,4 +200,4 @@
   (let ((names (let-bound-variables let-exp))
         (values (let-values let-exp))
         (body (let-body let-exp)))
-    (cons (list 'lambda names body) values)))
+    (cons (make-lambda names body) values)))

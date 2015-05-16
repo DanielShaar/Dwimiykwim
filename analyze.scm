@@ -329,6 +329,29 @@
 (defhandler execute-application apply-madlab madlab-procedure?)
 
 
+;;; Or (but not and)
+
+(define (analyze-or-clauses clauses)
+  (lambda (env)
+    (let loop ((cprocs (map analyze clauses)))
+      (and (not (null? cprocs))
+           (or ((car cprocs) env)
+               (loop (cdr cprocs)))))))
+
+(defhandler analyze (compose analyze-or-clauses or-clauses) or?)
+
+(define (analyze-and-clauses clauses)
+  (lambda (env)
+    (let loop ((cprocs (map analyze clauses)))
+      (or (null? cprocs)
+          (if (null? (cdr cprocs))
+              ((car cprocs) env)
+              (and ((car cprocs) env)
+                   (loop (cdr cprocs))))))))
+
+(defhandler analyze (compose analyze-and-clauses and-clauses) and?)
+
+
 ;;; Macros (definitions are in syntax.scm)
 
 (defhandler analyze (compose analyze cond->if) cond?)
