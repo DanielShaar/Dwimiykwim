@@ -329,7 +329,7 @@
 (defhandler execute-application apply-madlab madlab-procedure?)
 
 
-;;; Or (but not and)
+;;; And and or
 
 (define (analyze-or-clauses clauses)
   (lambda (env)
