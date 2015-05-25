@@ -186,3 +186,10 @@
  4
  (map (??:apply (madlab ((x number?) (y symbol?)) (list x y))) '(6 b)))
 ;=> ((6 a) (4 b))
+
+;dwimiykwim>
+(madblock
+ (define q 3)
+ (set! q 4)
+ (?? (madlab ((x any?)) (+ q x))))
+;=> 7

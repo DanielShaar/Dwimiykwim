@@ -125,7 +125,7 @@
         (vproc (analyze (assignment-value exp))))
     (lambda (env)
       (set-variable-value! var (vproc env) env)
-      'ok)))
+      #!unspecific)))
 
 (defhandler analyze analyze-assignment assignment?)
 
@@ -223,14 +223,10 @@
   (let ((proc (analyze exp)))
     (lambda (env)
       (let ((result (proc env)))
-        (set! *inference-ctx* (cons result *inference-ctx*))
+        ;; Ignore the dummy return value of
+        (if (not (equal? result #!unspecific))
+            (set! *inference-ctx* (cons result *inference-ctx*)))
         result))))
-
-(define (add-result-to-ctx proc)
-  (lambda (env)
-    (let ((result (proc env)))
-      (set! *inference-ctx* (cons result *inference-ctx*))
-      result)))
 
 (define (analyze-madsequence inherit?)
   (lambda (exps)
