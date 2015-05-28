@@ -199,12 +199,12 @@ respectively.
 We make a madlab \texttt{x-then-y} that
 given some \texttt{x} and some \texttt{y},
 will make a list containing the \texttt{x} followed by the \texttt{y}.
-This uses the argument matching with the \texttt{has-tag?} predicate:
-\texttt{((has-tag? t) x)} is true when \texttt{x} has tag \texttt{t}.
+This uses the argument matching with the \texttt{~~?} predicate:
+\texttt{((~~? t) x)} is true when \texttt{x} has tag \texttt{t}.
 \begin{Verbatim}
 ;dwimiykwim>
-(define (x-then-y (x (has-tag? 'x))
-                  (y (has-tag? 'y)))
+(define (x-then-y (x (~~? 'x))
+                  (y (~~? 'y)))
   (list x y))
 ;dwimiykwim>
 (x-then-y (~~ 'y 4) (~~ 'x 3))
@@ -412,12 +412,12 @@ when there's only a single value in the inference context
 that could possibly be a binary operation expression.
 
 Our application procedure is straightforward.
-Both the left and right operands are numbers,
-so we need to tag them to disambiguate them.
+Both the left and right subexpressions are numbers after evaluation,
+so we need tags to tell them apart.
 \begin{Verbatim}
 (define (apply-binop (op symbol?)
-                     (left (has-tag? 'left))
-                     (right (has-tag? 'right)))
+                     (left (~~? 'left))
+                     (right (~~? 'right)))
   ((cadr (assq op
                (list (list '+ +)
                      (list '- -)
@@ -520,7 +520,7 @@ The story is similar for context operations with one new toy:
 \texttt{\~\~:delq} removes its first argument from the tag list of its second.
 \begin{Verbatim}
 (define ctx?
-  (has-tag? 'ctx))
+  (~~? 'ctx))
 (define empty-ctx
   (~~ 'ctx '()))
 (define (list-of p?)

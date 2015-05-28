@@ -117,7 +117,7 @@
 ;=> ((four) (six) (eight gotcha))
 
 ;dwimiykwim>
-(define (x-then-y (x (has-tag? 'x)) (y (has-tag? 'y)))
+(define (x-then-y (x (~~? 'x)) (y (~~? 'y)))
   (list x y))
 ;=> #(<madlab-procedure> ((x #[compound-procedure 12]) (y #[compound-procedure 13])) #[compound-procedure 14])
 

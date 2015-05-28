@@ -17,8 +17,8 @@
   (caddr exp))
 
 (define (apply-binop (op symbol?)
-                     (left (has-tag? 'left))
-                     (right (has-tag? 'right)))
+                     (left (~~? 'left))
+                     (right (~~? 'right)))
   ((cadr (assq op
                (list (list '+ +)
                      (list '- -)
@@ -67,7 +67,7 @@
 ;;; Let bindings
 
 (define ctx?
-  (has-tag? 'ctx))
+  (~~? 'ctx))
 
 (define empty-ctx
   (~~ 'ctx '()))

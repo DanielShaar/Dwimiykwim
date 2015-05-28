@@ -62,7 +62,7 @@
 (define untag lib:untag)
 (define clear-tags lib:clear-tags)
 
-(define (has-tag? name)
+(define (~~? name)
   (lambda (x)
     (member name (tags x))))
 
