@@ -125,7 +125,7 @@ For example, only the first two inferences in
 will succeed.
 A single procedure, \texttt{(curry list 'say)},
 is in the inference context the whole time.
-When the first \texttt{infer} happens,
+When the first \texttt{??} happens,
 there is also only one list, so inference succeeds.
 Note, however, that the resulting list is added to the inference context.
 The second \texttt{??} is explicitly passed a list,
@@ -170,11 +170,11 @@ and remove the tags if we would just like the value.
 However, we can always perform default operations on tagged data
 without removing the tags in advanced because procedures
 untag data before processing it outside the interpreter.
-This is implemented by making a procedure "tag-aware".
-Being "tag aware" removes tags in logical places,
+This is implemented by making a procedure ``tag aware''.
+Being tag aware removes tags in logical places,
 so that Scheme functions and other necessary functions
 can operate as intended when the tags are not important.
-For example, car and cdr should be "tag aware" because
+For example, \texttt{car} and \texttt{cdr} should be tag aware because
 the record type for tagged data is a list,
 but we only care for the actual data being tagged.
 
@@ -196,11 +196,11 @@ is ordering tagged operands after receiving them in the wrong order.
 The syntax for tagging data is \texttt{\~\~}.
 In this example, we tag the numbers 3 and 4 with \texttt{x} and \texttt{y},
 respectively.
-We make a madlab \texttt{x-then-y} that
+We make a madlab \texttt{x-then-y} that,
 given some \texttt{x} and some \texttt{y},
 will make a list containing the \texttt{x} followed by the \texttt{y}.
-This uses the argument matching with the \texttt{~~?} predicate:
-\texttt{((~~? t) x)} is true when \texttt{x} has tag \texttt{t}.
+This uses the argument matching with the \texttt{\~\~?} predicate:
+\texttt{((\~\~? t) x)} is true when \texttt{x} has tag \texttt{t}.
 \begin{Verbatim}
 ;dwimiykwim>
 (define (x-then-y (x (~~? 'x))
@@ -371,6 +371,17 @@ not saving the initial choice.
 This continues until either the user exits the debugger,
 or a good match is found and program terminates with an error.
 
+Our debugger is useful for dealing with having too full an inference context.
+Further work would focus on the opposite case, in which
+there aren't enough predicate-satisfying values in the inference context
+to call a madlab at all,
+and on streamlining the user experience in both cases.
+The eventual goal is for programming with Dwimiykwim to be
+a conversation between the programmer and interpreter.
+The programmer sketches programs by specifying what functions to call
+and certain hints about what to pass them,
+and the interpreter responds with requests for more hints or missing values.
+
 
 \section{Demo and Discussion}
 
@@ -406,7 +417,7 @@ where \texttt{x1} must satisfy \texttt{p1?} and so on.
 (define (binop-right (exp binop?))
   (caddr exp))
 \end{Verbatim}
-Here we use madlabs not for disambiguating arguments
+Here we use madlabs not for disambiguation between arguments
 but to allow inference of the single argument
 when there's only a single value in the inference context
 that could possibly be a binary operation expression.
@@ -433,7 +444,7 @@ with a short list of exceptions including \texttt{cons} and \texttt{list}
 that allow for tagged data to exist in larger data structures.
 
 The plan for evaluation is to have a case each
-for the numberic primitives and a binary operations.
+for the numeric primitives and a binary operations.
 We choose a case with the following madlabs,
 which are once again madlabs for the sake of inference
 rather than argument ordering.
