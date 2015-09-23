@@ -407,9 +407,8 @@ desugars to a \texttt{madlab} expression
 where \texttt{x1} must satisfy \texttt{p1?} and so on.
 \begin{Verbatim}
 (define (binop? exp)
-  (if (pair? exp)
-      (member (car exp) '(+ - * /))
-      #f))
+  (and (pair? exp)
+       (member (car exp) '(+ - * /))))
 (define (binop-op (exp binop?))
   (car exp))
 (define (binop-left (exp binop?))
@@ -463,7 +462,7 @@ to many values that aren't expressions,
 though this could definitely be handled more intelligently
 by a future version of Dwimiykwim.
 At this point it is probably clear to the reader that
-we have not gone to great lengths to make all of our predicates air-tight,
+we have not gone to great lengths to make our predicates air-tight,
 but our somewhat lenient definitions of \texttt{exp?} and \texttt{binop?}
 suffice for this demo.
 
@@ -517,9 +516,8 @@ The basic operations for the \texttt{let} expressions are below.
 Given what we've seen so far, they are all straightforward.
 \begin{Verbatim}
 (define (let? exp)
-  (if (pair? exp)
-      (eq? (car exp) 'let)
-      #f))
+  (and (pair? exp)
+       (eq? (car exp) 'let)))
 (define (let-vars (exp let?))
   (map car (cadr exp)))
 (define (let-vals (exp let?))
@@ -527,18 +525,13 @@ Given what we've seen so far, they are all straightforward.
 (define (let-body (exp let?))
   (caddr exp))
 \end{Verbatim}
-The story is similar for context operations with one new toy:
+Context operations are also straightforward, but we need one new tool:
 \texttt{\~\~:delq} removes its first argument from the tag list of its second.
 \begin{Verbatim}
 (define ctx?
   (~~? 'ctx))
 (define empty-ctx
   (~~ 'ctx '()))
-(define (list-of p?)
-  (lambda (xs)
-    (if (list? xs)
-        (every p? xs)
-        #f)))
 (define (bind (ctx ctx?)
               (vars (list-of symbol?))
               (vals (list-of number?)))
@@ -548,6 +541,15 @@ The story is similar for context operations with one new toy:
                 (var symbol?))
   (cadr (assq var ctx)))
 \end{Verbatim}
+In the above, the helper predicate \texttt{list-of}
+does what it says on the tin.
+\begin{Verbatim}
+(define (list-of p?)
+  (lambda (xs)
+    (and (list? xs)
+         (every p? xs))))
+\end{Verbatim}
+
 
 We are almost ready to define evaluation,
 but first we need a new inference primitive, \texttt{??:apply}.
@@ -571,15 +573,17 @@ We use the word ``primitive'' not literally
 but to connote that it would be bad style to define too many of these
 context-dependent procedures.
 
-With these pieces, we define predicates for the two new cases
-and a new evaluation procedure.
-The fact that we used \texttt{??} for the \texttt{eval} applications earlier
-means we don't need to change the first two cases.
+We neeed predicates for the two new cases,
+after which we can define a new evaluation procedure.
 \begin{Verbatim}
 (define (variable? (exp exp?))
   (symbol? exp))
 (define (declaration? (exp exp?))
   (let? exp))
+\end{Verbatim}
+The fact that we used \texttt{??} for the \texttt{eval} applications earlier
+means we don't need to change the first two cases of \texttt{eval}.
+\begin{Verbatim}
 (define (eval (ctx ctx?)
               (exp exp?))
   (cond
